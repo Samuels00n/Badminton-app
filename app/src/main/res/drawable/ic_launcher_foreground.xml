@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Shuttlecock Cork Base -->
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M54,74 C49,74 46,70 46,65 L62,65 C62,70 59,74 54,74 Z" />
+    <!-- Cork Band -->
+    <path
+        android:fillColor="#E65100"
+        android:pathData="M46,65 h16 v-4 h-16 z" />
+    <!-- Feather Cone -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M46,61 L32,32 L76,32 L62,61 Z" />
+    <!-- Feather Stems/Lines -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#004D40"
+        android:strokeWidth="1.5"
+        android:pathData="M38,32 L49,61 M48,32 L52,61 M60,32 L56,61 M70,32 L59,61" />
+    <!-- Feather Grid Lines -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#004D40"
+        android:strokeWidth="1.2"
+        android:pathData="M34,38 h40 M38,46 h32 M42,54 h24" />
+</vector>
