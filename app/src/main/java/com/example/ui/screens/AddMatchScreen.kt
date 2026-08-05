@@ -67,7 +67,7 @@ fun AddMatchScreen(
     onSaveManualMatch: (MatchEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) } // 0 = Živé Skóre, 1 = Ruční Zadání
+    var selectedTab by remember { mutableIntStateOf(0) } // 0 = Ruční Zadání, 1 = Živé Skóre
 
     Column(
         modifier = modifier
@@ -97,21 +97,27 @@ fun AddMatchScreen(
             Tab(
                 selected = selectedTab == 0,
                 onClick = { selectedTab = 0 },
-                text = { Text("Živé Skóre", fontWeight = FontWeight.Bold) },
-                modifier = Modifier.testTag("tab_live_score")
+                text = { Text("Ruční Zadání", fontWeight = FontWeight.Bold) },
+                modifier = Modifier.testTag("tab_manual_entry")
             )
             Tab(
                 selected = selectedTab == 1,
                 onClick = { selectedTab = 1 },
-                text = { Text("Ruční Zadání", fontWeight = FontWeight.Bold) },
-                modifier = Modifier.testTag("tab_manual_entry")
+                text = { Text("Živé Skóre", fontWeight = FontWeight.Bold) },
+                modifier = Modifier.testTag("tab_live_score")
             )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         if (selectedTab == 0) {
-            // TAB 1: Live Score
+            // TAB 1: Manual Result Entry Form
+            ManualMatchForm(
+                players = players,
+                onSave = onSaveManualMatch
+            )
+        } else {
+            // TAB 2: Live Score
             if (liveMatchState.player1 != null && liveMatchState.player2 != null) {
                 // Active Live Scoreboard
                 ScoreBoard(
@@ -128,12 +134,6 @@ fun AddMatchScreen(
                     onStart = onStartLiveMatch
                 )
             }
-        } else {
-            // TAB 2: Manual Result Entry Form
-            ManualMatchForm(
-                players = players,
-                onSave = onSaveManualMatch
-            )
         }
     }
 }

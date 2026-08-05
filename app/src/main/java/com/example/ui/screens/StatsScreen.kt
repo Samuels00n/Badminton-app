@@ -18,12 +18,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material.icons.filled.SportsTennis
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -52,6 +54,9 @@ import com.example.ui.theme.ForestGreenPrimary
 import com.example.ui.theme.NaturalCardBorder
 import com.example.ui.viewmodel.BadmintonViewModel
 import com.example.ui.viewmodel.PlayerStats
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,6 +86,8 @@ fun StatsScreen(
     val h2h = if (selectedOpponent != null && selectedOpponent?.id != activePlayer.id) {
         viewModel.calculateHeadToHead(activePlayer, selectedOpponent!!, matches)
     } else null
+
+    val dateFormat = remember { SimpleDateFormat("d. MMMM yyyy", Locale("cs", "CZ")) }
 
     LazyColumn(
         modifier = modifier
@@ -216,7 +223,7 @@ fun StatsScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    Text("Porovnat s hráče:", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("Porovnat s hráčem:", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(4.dp))
                     PlayerSelectBox(
                         players = players.filter { it.id != activePlayer.id },
@@ -227,6 +234,7 @@ fun StatsScreen(
                     if (h2h != null) {
                         Spacer(modifier = Modifier.height(16.dp))
 
+                        // Overall H2H Banner
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -237,19 +245,173 @@ fun StatsScreen(
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                PlayerAvatar(name = activePlayer.name, colorHex = activePlayer.colorHex, size = 36.dp)
+                                PlayerAvatar(
+                                    name = activePlayer.name,
+                                    colorHex = activePlayer.colorHex,
+                                    avatarIcon = activePlayer.avatarIcon,
+                                    size = 40.dp
+                                )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(activePlayer.name, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 Text("${h2h.player1Wins} výher", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = ForestGreenPrimary)
+                                Text("${h2h.player1Sets} setů", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                             }
 
-                            Text("VS", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f))
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("VS", fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f))
+                                Text("${h2h.matches.size} zápasů", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ForestGreenPrimary)
+                            }
 
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                PlayerAvatar(name = selectedOpponent?.name ?: "S", colorHex = selectedOpponent?.colorHex ?: "#BC4749", size = 36.dp)
+                                PlayerAvatar(
+                                    name = selectedOpponent?.name ?: "S",
+                                    colorHex = selectedOpponent?.colorHex ?: "#BC4749",
+                                    avatarIcon = selectedOpponent?.avatarIcon ?: "🏸",
+                                    size = 40.dp
+                                )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(selectedOpponent?.name ?: "Soupeř", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 Text("${h2h.player2Wins} výher", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = CoralRedLoss)
+                                Text("${h2h.player2Sets} setů", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            }
+                        }
+
+                        // Detailed list of H2H matches
+                        Spacer(modifier = Modifier.height(20.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = "Výčet všech vzájemných zápasů (${h2h.matches.size}):",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        if (h2h.matches.isEmpty()) {
+                            Text(
+                                text = "Mezi těmito hráči nebyly odehrány žádné vzájemné zápasy.",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        } else {
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                h2h.matches.forEach { match ->
+                                    val isP1Team1 = (match.player1Id == activePlayer.id || match.player3Id == activePlayer.id)
+                                    val activePlayerWon = if (isP1Team1) (match.setsWinner == 1) else (match.setsWinner == 2)
+                                    val activePlayerSets = if (isP1Team1) match.scoreSetsPlayer1 else match.scoreSetsPlayer2
+                                    val opponentSets = if (isP1Team1) match.scoreSetsPlayer2 else match.scoreSetsPlayer1
+
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(14.dp))
+                                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                                            .border(1.dp, NaturalCardBorder, RoundedCornerShape(14.dp))
+                                            .padding(12.dp)
+                                    ) {
+                                        Column {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = "${dateFormat.format(Date(match.timestamp))} • ${match.category} (${match.courtType})",
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                                                )
+
+                                                Box(
+                                                    modifier = Modifier
+                                                        .clip(RoundedCornerShape(6.dp))
+                                                        .background(if (activePlayerWon) ForestGreenContainer else Color(0xFFFFEBEE))
+                                                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                                                ) {
+                                                    Text(
+                                                        text = if (activePlayerWon) "Výhra ${activePlayer.name}" else "Výhra ${selectedOpponent?.name}",
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = if (activePlayerWon) ForestGreenPrimary else CoralRedLoss
+                                                    )
+                                                }
+                                            }
+
+                                            Spacer(modifier = Modifier.height(8.dp))
+
+                                            // Score summary row
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
+                                                    Text(
+                                                        text = activePlayer.name,
+                                                        fontWeight = if (activePlayerWon) FontWeight.ExtraBold else FontWeight.Normal,
+                                                        fontSize = 13.sp
+                                                    )
+                                                    Text(
+                                                        text = " vs ",
+                                                        fontSize = 12.sp,
+                                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                                    )
+                                                    Text(
+                                                        text = selectedOpponent?.name ?: "Soupeř",
+                                                        fontWeight = if (!activePlayerWon) FontWeight.ExtraBold else FontWeight.Normal,
+                                                        fontSize = 13.sp
+                                                    )
+                                                }
+
+                                                Text(
+                                                    text = "$activePlayerSets : $opponentSets",
+                                                    fontSize = 16.sp,
+                                                    fontWeight = FontWeight.Black,
+                                                    color = if (activePlayerWon) ForestGreenPrimary else CoralRedLoss
+                                                )
+                                            }
+
+                                            Spacer(modifier = Modifier.height(6.dp))
+
+                                            // Set scores breakdown chips
+                                            Row(
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                val s1Str = if (isP1Team1) "${match.set1Player1}:${match.set1Player2}" else "${match.set1Player2}:${match.set1Player1}"
+                                                SetScoreChip(label = "1. set", score = s1Str)
+
+                                                if (match.set2Player1 != null && match.set2Player2 != null) {
+                                                    val s2Str = if (isP1Team1) "${match.set2Player1}:${match.set2Player2}" else "${match.set2Player2}:${match.set2Player1}"
+                                                    SetScoreChip(label = "2. set", score = s2Str)
+                                                }
+
+                                                if (match.set3Player1 != null && match.set3Player2 != null) {
+                                                    val s3Str = if (isP1Team1) "${match.set3Player1}:${match.set3Player2}" else "${match.set3Player2}:${match.set3Player1}"
+                                                    SetScoreChip(label = "3. set", score = s3Str)
+                                                }
+                                            }
+
+                                            if (match.notes.isNotBlank()) {
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    text = "Poznámka: ${match.notes}",
+                                                    fontSize = 11.sp,
+                                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -260,6 +422,24 @@ fun StatsScreen(
         item {
             Spacer(modifier = Modifier.height(24.dp))
         }
+    }
+}
+
+@Composable
+private fun SetScoreChip(label: String, score: String) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, NaturalCardBorder, RoundedCornerShape(6.dp))
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    ) {
+        Text(
+            text = "$label $score",
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 
@@ -294,7 +474,12 @@ private fun PlayerSelectBox(
                 DropdownMenuItem(
                     text = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            PlayerAvatar(name = p.name, colorHex = p.colorHex, size = 24.dp)
+                            PlayerAvatar(
+                                name = p.name,
+                                colorHex = p.colorHex,
+                                avatarIcon = p.avatarIcon,
+                                size = 24.dp
+                            )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(p.name, fontWeight = FontWeight.Bold)
                         }

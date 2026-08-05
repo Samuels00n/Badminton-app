@@ -13,27 +13,43 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Analytics
-import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.SportsTennis
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -49,6 +65,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ui.components.PlayerAvatar
 import com.example.ui.screens.AddMatchScreen
 import com.example.ui.screens.DashboardScreen
 import com.example.ui.screens.MatchesScreen
@@ -56,11 +73,13 @@ import com.example.ui.screens.PlayersScreen
 import com.example.ui.screens.StatsScreen
 import com.example.ui.theme.BadmintonTheme
 import com.example.ui.theme.ForestGreenContainer
+import com.example.ui.theme.ForestGreenDark
 import com.example.ui.theme.ForestGreenPrimary
 import com.example.ui.theme.NaturalCardBorder
 import com.example.ui.theme.NaturalSurfaceVariant
 import com.example.ui.theme.OliveAccent
 import com.example.ui.viewmodel.BadmintonViewModel
+import com.example.ui.viewmodel.GoogleAccountState
 
 enum class AppNavDestination(
     val title: String,
@@ -93,11 +112,13 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainAppContent(viewModel: BadmintonViewModel) {
     var currentDestination by remember { mutableStateOf(AppNavDestination.DASHBOARD) }
+    var showGoogleSyncDialog by remember { mutableStateOf(false) }
 
     val players by viewModel.players.collectAsState()
     val matches by viewModel.matches.collectAsState()
     val liveMatchState by viewModel.liveMatch.collectAsState()
     val categoryFilter by viewModel.selectedCategoryFilter.collectAsState()
+    val googleAccountState by viewModel.googleAccount.collectAsState()
 
     // Calculated stats list for all players
     val playerStatsList = remember(players, matches) {
@@ -106,10 +127,25 @@ fun MainAppContent(viewModel: BadmintonViewModel) {
         }
     }
 
+    if (showGoogleSyncDialog) {
+        GoogleSyncDialog(
+            accountState = googleAccountState,
+            onDismiss = { showGoogleSyncDialog = false },
+            onSignIn = { name, email -> viewModel.signInWithGoogle(name, email) },
+            onSignOut = { viewModel.signOutGoogle() },
+            onUpdateRoom = { room -> viewModel.setSyncRoomId(room) },
+            onSyncNow = { viewModel.triggerCloudSync() }
+        )
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            NaturalTopAppBar()
+            NaturalTopAppBar(
+                accountState = googleAccountState,
+                onOpenGoogleSync = { showGoogleSyncDialog = true }
+            )
         },
         bottomBar = {
             NaturalBottomNavigationBar(
@@ -126,7 +162,9 @@ fun MainAppContent(viewModel: BadmintonViewModel) {
                     containerColor = OliveAccent,
                     contentColor = Color(0xFF1A1C19),
                     shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.testTag("fab_add_match")
+                    modifier = Modifier
+                        .padding(bottom = 8.dp)
+                        .testTag("fab_add_match")
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
@@ -148,6 +186,8 @@ fun MainAppContent(viewModel: BadmintonViewModel) {
                     players = players,
                     matches = matches,
                     playerStatsList = playerStatsList,
+                    googleAccountState = googleAccountState,
+                    onOpenGoogleSync = { showGoogleSyncDialog = true },
                     onNavigateToAddMatch = { currentDestination = AppNavDestination.ADD_MATCH },
                     onNavigateToPlayers = { currentDestination = AppNavDestination.PLAYERS },
                     onNavigateToStats = { currentDestination = AppNavDestination.STATS },
@@ -190,8 +230,8 @@ fun MainAppContent(viewModel: BadmintonViewModel) {
 
                 AppNavDestination.PLAYERS -> PlayersScreen(
                     players = players,
-                    onAddPlayer = { name, hand, style, skill, color, notes ->
-                        viewModel.addPlayer(name, hand, style, skill, color, notes)
+                    onAddPlayer = { name, hand, style, skill, color, notes, avatarIcon ->
+                        viewModel.addPlayer(name, hand, style, skill, color, notes, avatarIcon)
                     },
                     onDeletePlayer = { viewModel.deletePlayer(it) }
                 )
@@ -201,65 +241,83 @@ fun MainAppContent(viewModel: BadmintonViewModel) {
 }
 
 @Composable
-fun NaturalTopAppBar() {
-    Row(
+fun NaturalTopAppBar(
+    accountState: GoogleAccountState,
+    onOpenGoogleSync: () -> Unit
+) {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp)
             .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .statusBarsPadding()
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(ForestGreenContainer),
-                contentAlignment = Alignment.Center
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.SportsTennis,
-                    contentDescription = null,
-                    tint = ForestGreenPrimary,
-                    modifier = Modifier.size(22.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(ForestGreenContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.SportsTennis,
+                        contentDescription = null,
+                        tint = ForestGreenPrimary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Column {
+                    Text(
+                        text = "Badminton Pro",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        letterSpacing = (-0.5).sp
+                    )
+                    Text(
+                        text = if (accountState.isSignedIn) "Google Cloud Sync Aktivní" else "Místní databáze",
+                        fontSize = 11.sp,
+                        color = if (accountState.isSignedIn) ForestGreenPrimary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
 
-            Text(
-                text = "Badminton Pro",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground,
-                letterSpacing = (-0.5).sp
-            )
-        }
-
-        Box(
-            modifier = Modifier
-                .clip(CircleShape)
-                .background(NaturalSurfaceVariant)
-                .border(1.dp, NaturalCardBorder, CircleShape)
-                .padding(horizontal = 12.dp, vertical = 6.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.EmojiEvents,
-                    contentDescription = null,
-                    tint = ForestGreenPrimary,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "PRO",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = ForestGreenPrimary
-                )
+            // Google Account / Cloud Sync Pill Button
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(if (accountState.isSignedIn) ForestGreenContainer else NaturalSurfaceVariant)
+                    .border(1.dp, if (accountState.isSignedIn) ForestGreenPrimary else NaturalCardBorder, CircleShape)
+                    .clickable { onOpenGoogleSync() }
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                    .testTag("google_sync_top_btn")
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = if (accountState.isSignedIn) Icons.Default.CloudDone else Icons.Default.CloudSync,
+                        contentDescription = "Google Sync",
+                        tint = ForestGreenPrimary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (accountState.isSignedIn) "Google Účet" else "Přihlásit Google",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = ForestGreenPrimary
+                    )
+                }
             }
         }
     }
@@ -270,52 +328,284 @@ fun NaturalBottomNavigationBar(
     currentDestination: AppNavDestination,
     onNavigate: (AppNavDestination) -> Unit
 ) {
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp)
-            .background(NaturalSurfaceVariant)
-            .border(width = 1.dp, color = NaturalCardBorder)
-            .padding(horizontal = 8.dp),
-        horizontalArrangement = Arrangement.SpaceAround,
-        verticalAlignment = Alignment.CenterVertically
+            .navigationBarsPadding()
+            .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp),
+        contentAlignment = Alignment.Center
     ) {
-        AppNavDestination.values().forEach { dest ->
-            val isSelected = currentDestination == dest
-
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(68.dp),
+            shape = RoundedCornerShape(24.dp),
+            color = ForestGreenDark,
+            tonalElevation = 8.dp,
+            shadowElevation = 6.dp
+        ) {
+            Row(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(16.dp))
-                    .clickable { onNavigate(dest) }
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
-                    .testTag(dest.testTag)
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(if (isSelected) Color(0xFFD4E0B8) else Color.Transparent)
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = dest.icon,
-                        contentDescription = dest.title,
-                        tint = if (isSelected) ForestGreenPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                        modifier = Modifier.size(22.dp)
-                    )
+                AppNavDestination.values().forEach { dest ->
+                    val isSelected = currentDestination == dest
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .clickable { onNavigate(dest) }
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                            .testTag(dest.testTag)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(if (isSelected) OliveAccent else Color.Transparent)
+                                .padding(horizontal = 14.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = dest.icon,
+                                contentDescription = dest.title,
+                                tint = if (isSelected) Color(0xFF1A1C19) else Color.White.copy(alpha = 0.65f),
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Text(
+                            text = dest.title,
+                            fontSize = 11.sp,
+                            fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium,
+                            color = if (isSelected) OliveAccent else Color.White.copy(alpha = 0.65f)
+                        )
+                    }
                 }
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Text(
-                    text = dest.title,
-                    fontSize = 11.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    color = if (isSelected) ForestGreenPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                )
             }
         }
     }
+}
+
+@Composable
+fun GoogleSyncDialog(
+    accountState: GoogleAccountState,
+    onDismiss: () -> Unit,
+    onSignIn: (name: String, email: String) -> Unit,
+    onSignOut: () -> Unit,
+    onUpdateRoom: (String) -> Unit,
+    onSyncNow: () -> Unit
+) {
+    var roomInput by remember { mutableStateOf(accountState.syncRoomId) }
+    var nameInput by remember { mutableStateOf(accountState.displayName ?: "Samuel Stříž") }
+    var emailInput by remember { mutableStateOf(accountState.email ?: "strizsamuel@gmail.com") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.CloudSync,
+                    contentDescription = null,
+                    tint = ForestGreenPrimary,
+                    modifier = Modifier.size(28.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "Google Účet & Cloud Sync",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            }
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (!accountState.isSignedIn) {
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = ForestGreenContainer)
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Text(
+                                text = "Propojte svůj Google účet",
+                                fontWeight = FontWeight.Bold,
+                                color = ForestGreenPrimary,
+                                fontSize = 14.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Přihlášením propojíte aplikaci s ostatními mobilními telefony a sdíleným cloudem.",
+                                fontSize = 12.sp,
+                                color = ForestGreenPrimary.copy(alpha = 0.85f)
+                            )
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = nameInput,
+                        onValueChange = { nameInput = it },
+                        label = { Text("Jméno a Příjmení") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = emailInput,
+                        onValueChange = { emailInput = it },
+                        label = { Text("Google E-mail") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    Button(
+                        onClick = { onSignIn(nameInput, emailInput) },
+                        colors = ButtonDefaults.buttonColors(containerColor = ForestGreenPrimary),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(imageVector = Icons.Default.AccountCircle, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Přihlásit se přes Google účet", fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    // Profile Info Card
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            PlayerAvatar(
+                                name = accountState.displayName ?: "Google",
+                                colorHex = "#386641",
+                                size = 44.dp
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = accountState.displayName ?: "Google Uživatel",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp
+                                )
+                                Text(
+                                    text = accountState.email ?: "",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
+                            }
+                            TextButton(onClick = onSignOut) {
+                                Text("Odhlásit", color = Color(0xFFBC4749), fontSize = 12.sp)
+                            }
+                        }
+                    }
+
+                    // Sync Status Banner
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(ForestGreenContainer)
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (accountState.isSyncing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = ForestGreenPrimary
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.CloudDone,
+                                contentDescription = null,
+                                tint = ForestGreenPrimary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = accountState.syncStatusMessage,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ForestGreenPrimary
+                        )
+                    }
+
+                    // Shared Sync Code Input
+                    Column {
+                        Text(
+                            text = "Kód sdílené skupiny / klubu:",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = roomInput,
+                                onValueChange = { roomInput = it },
+                                placeholder = { Text("např. BADMINTON-2026") },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp)
+                            )
+
+                            Button(
+                                onClick = { onUpdateRoom(roomInput) },
+                                colors = ButtonDefaults.buttonColors(containerColor = ForestGreenPrimary),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("Uložit")
+                            }
+                        }
+                    }
+
+                    Text(
+                        text = "Zadejte stejný kód na ostatních mobilních telefonech. Všichni uživatelé se stejným kódem uvidí aktuální výsledky zápasů a statistiky.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+
+                    Button(
+                        onClick = onSyncNow,
+                        colors = ButtonDefaults.buttonColors(containerColor = OliveAccent),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Sync,
+                            contentDescription = null,
+                            tint = Color(0xFF1A1C19)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Synchronizovat data nyní",
+                            color = Color(0xFF1A1C19),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Zavřít", fontWeight = FontWeight.Bold)
+            }
+        }
+    )
 }

@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -28,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.entity.MatchEntity
@@ -36,8 +39,6 @@ import com.example.ui.theme.CoralRedLoss
 import com.example.ui.theme.ForestGreenContainer
 import com.example.ui.theme.ForestGreenPrimary
 import com.example.ui.theme.NaturalCardBorder
-import com.example.ui.theme.NaturalWarmChip
-import com.example.ui.theme.OliveAccent
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -57,6 +58,9 @@ fun MatchCard(
     val nameTeam1 = if (p3 != null) "${p1?.name ?: "Hráč 1"} & ${p3.name}" else (p1?.name ?: "Hráč 1")
     val nameTeam2 = if (p4 != null) "${p2?.name ?: "Hráč 2"} & ${p4.name}" else (p2?.name ?: "Hráč 2")
 
+    val isTeam1Winner = (match.setsWinner == 1)
+    val isTeam2Winner = (match.setsWinner == 2)
+
     val dateFormat = SimpleDateFormat("d. MMMM yyyy", Locale("cs", "CZ"))
     val dateStr = dateFormat.format(Date(match.timestamp))
 
@@ -72,7 +76,7 @@ fun MatchCard(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Header Row
+            // Header Row: Category chip, match type, date, delete button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -113,13 +117,15 @@ fun MatchCard(
                         IconButton(
                             onClick = onDeleteClick,
                             modifier = Modifier
-                                .padding(start = 4.dp)
+                                .size(32.dp)
+                                .padding(start = 6.dp)
                                 .testTag("delete_match_btn_${match.id}")
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
                                 contentDescription = "Smazat zápas",
-                                tint = CoralRedLoss.copy(alpha = 0.8f)
+                                tint = CoralRedLoss.copy(alpha = 0.7f),
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -128,107 +134,214 @@ fun MatchCard(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Scoreboard Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+            // Main Teams & Score Section - Clean structured layout
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                    .padding(12.dp)
             ) {
-                // Team 1
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    PlayerAvatar(
-                        name = p1?.name ?: "H1",
-                        colorHex = p1?.colorHex ?: "#386641",
-                        size = 40.dp
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Text(
-                            text = nameTeam1,
-                            fontWeight = if (match.setsWinner == 1) FontWeight.Bold else FontWeight.Medium,
-                            fontSize = 15.sp,
-                            color = if (match.setsWinner == 1) ForestGreenPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-                        )
-                        if (match.setsWinner == 1) {
-                            Text("Vítěz", fontSize = 11.sp, color = ForestGreenPrimary, fontWeight = FontWeight.Bold)
+                    // TEAM 1 ROW
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            // Avatars
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                PlayerAvatar(
+                                    name = p1?.name ?: "H1",
+                                    colorHex = p1?.colorHex ?: "#386641",
+                                    avatarIcon = p1?.avatarIcon ?: "🏸",
+                                    size = 36.dp
+                                )
+                                if (p3 != null) {
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    PlayerAvatar(
+                                        name = p3.name,
+                                        colorHex = p3.colorHex,
+                                        avatarIcon = p3.avatarIcon,
+                                        size = 36.dp
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(10.dp))
+
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = nameTeam1,
+                                        fontWeight = if (isTeam1Winner) FontWeight.Bold else FontWeight.Medium,
+                                        fontSize = 15.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        color = if (isTeam1Winner) ForestGreenPrimary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    if (isTeam1Winner) {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Icon(
+                                            imageVector = Icons.Default.EmojiEvents,
+                                            contentDescription = "Vítěz",
+                                            tint = Color(0xFFD4AF37),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                                if (isTeam1Winner) {
+                                    Text(
+                                        text = "Vítěz",
+                                        fontSize = 11.sp,
+                                        color = ForestGreenPrimary,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+
+                        // Team 1 Sets Score
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (isTeam1Winner) ForestGreenContainer else Color.Transparent)
+                                .padding(horizontal = 12.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = "${match.scoreSetsPlayer1}",
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 18.sp,
+                                color = if (isTeam1Winner) ForestGreenPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
                         }
                     }
-                }
 
-                // Score Badge
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .padding(horizontal = 14.dp, vertical = 6.dp)
-                ) {
-                    Text(
-                        text = "${match.scoreSetsPlayer1} : ${match.scoreSetsPlayer2}",
-                        fontWeight = FontWeight.Black,
-                        fontSize = 20.sp,
-                        color = ForestGreenPrimary
+                    // Divider
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(NaturalCardBorder.copy(alpha = 0.6f))
                     )
-                }
 
-                // Team 2
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.End,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = nameTeam2,
-                            fontWeight = if (match.setsWinner == 2) FontWeight.Bold else FontWeight.Medium,
-                            fontSize = 15.sp,
-                            color = if (match.setsWinner == 2) ForestGreenPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-                        )
-                        if (match.setsWinner == 2) {
-                            Text("Vítěz", fontSize = 11.sp, color = ForestGreenPrimary, fontWeight = FontWeight.Bold)
+                    // TEAM 2 ROW
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            // Avatars
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                PlayerAvatar(
+                                    name = p2?.name ?: "H2",
+                                    colorHex = p2?.colorHex ?: "#BC4749",
+                                    avatarIcon = p2?.avatarIcon ?: "🏸",
+                                    size = 36.dp
+                                )
+                                if (p4 != null) {
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    PlayerAvatar(
+                                        name = p4.name,
+                                        colorHex = p4.colorHex,
+                                        avatarIcon = p4.avatarIcon,
+                                        size = 36.dp
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(10.dp))
+
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = nameTeam2,
+                                        fontWeight = if (isTeam2Winner) FontWeight.Bold else FontWeight.Medium,
+                                        fontSize = 15.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        color = if (isTeam2Winner) ForestGreenPrimary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    if (isTeam2Winner) {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Icon(
+                                            imageVector = Icons.Default.EmojiEvents,
+                                            contentDescription = "Vítěz",
+                                            tint = Color(0xFFD4AF37),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                                if (isTeam2Winner) {
+                                    Text(
+                                        text = "Vítěz",
+                                        fontSize = 11.sp,
+                                        color = ForestGreenPrimary,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+
+                        // Team 2 Sets Score
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (isTeam2Winner) ForestGreenContainer else Color.Transparent)
+                                .padding(horizontal = 12.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = "${match.scoreSetsPlayer2}",
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 18.sp,
+                                color = if (isTeam2Winner) ForestGreenPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
                         }
                     }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    PlayerAvatar(
-                        name = p2?.name ?: "H2",
-                        colorHex = p2?.colorHex ?: "#BC4749",
-                        size = 40.dp
-                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Set Breakdown
+            // Set Points Breakdown
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                    .padding(horizontal = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
                         text = "1. set: ${match.set1Player1}:${match.set1Player2}",
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                     )
                     if (match.set2Player1 != null && match.set2Player2 != null) {
                         Text(
                             text = "2. set: ${match.set2Player1}:${match.set2Player2}",
                             fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                         )
                     }
                     if (match.set3Player1 != null && match.set3Player2 != null) {
                         Text(
                             text = "3. set: ${match.set3Player1}:${match.set3Player2}",
                             fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                         )
                     }
                 }

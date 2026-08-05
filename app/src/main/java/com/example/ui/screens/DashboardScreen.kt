@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +19,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.SportsTennis
@@ -45,7 +48,9 @@ import com.example.ui.components.MatchCard
 import com.example.ui.components.PlayerAvatar
 import com.example.ui.theme.ForestGreenContainer
 import com.example.ui.theme.ForestGreenPrimary
+import com.example.ui.theme.NaturalCardBorder
 import com.example.ui.theme.OliveAccent
+import com.example.ui.viewmodel.GoogleAccountState
 import com.example.ui.viewmodel.PlayerStats
 
 @Composable
@@ -53,6 +58,8 @@ fun DashboardScreen(
     players: List<PlayerEntity>,
     matches: List<MatchEntity>,
     playerStatsList: List<PlayerStats>,
+    googleAccountState: GoogleAccountState,
+    onOpenGoogleSync: () -> Unit,
     onNavigateToAddMatch: () -> Unit,
     onNavigateToPlayers: () -> Unit,
     onNavigateToStats: () -> Unit,
@@ -71,11 +78,82 @@ fun DashboardScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             BadmintonHeader(
                 totalMatches = matches.size,
                 totalPlayers = players.size
             )
+        }
+
+        // Google Cloud Sync Banner
+        item {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable { onOpenGoogleSync() },
+                colors = CardDefaults.cardColors(
+                    containerColor = if (googleAccountState.isSignedIn) ForestGreenContainer else MaterialTheme.colorScheme.surfaceVariant
+                ),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    if (googleAccountState.isSignedIn) ForestGreenPrimary.copy(alpha = 0.5f) else NaturalCardBorder
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = if (googleAccountState.isSignedIn) Icons.Default.CloudDone else Icons.Default.CloudSync,
+                            contentDescription = null,
+                            tint = ForestGreenPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = if (googleAccountState.isSignedIn)
+                                    "Google Sync: ${googleAccountState.displayName}"
+                                else
+                                    "Připojit Google účet pro propojitelnost",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = if (googleAccountState.isSignedIn)
+                                    "Kód skupiny: ${googleAccountState.syncRoomId} • ${googleAccountState.syncStatusMessage}"
+                                else
+                                    "Klikněte zde pro nastavení sdílení s ostatními mobily",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(ForestGreenPrimary)
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = if (googleAccountState.isSignedIn) "Spravovat" else "Přihlásit",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
         }
 
         // Quick Action Buttons Row
@@ -195,6 +273,7 @@ fun DashboardScreen(
                                     PlayerAvatar(
                                         name = stat.player.name,
                                         colorHex = stat.player.colorHex,
+                                        avatarIcon = stat.player.avatarIcon,
                                         size = 36.dp
                                     )
                                     Spacer(modifier = Modifier.width(10.dp))
@@ -316,7 +395,7 @@ fun DashboardScreen(
         }
 
         item {
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }

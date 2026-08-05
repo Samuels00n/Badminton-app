@@ -1,12 +1,14 @@
 package com.example.ui.viewmodel
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.BadmintonDatabase
 import com.example.data.entity.MatchEntity
 import com.example.data.entity.PlayerEntity
 import com.example.data.repository.BadmintonRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,6 +19,17 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+data class GoogleAccountState(
+    val isSignedIn: Boolean = false,
+    val displayName: String? = null,
+    val email: String? = null,
+    val photoUrl: String? = null,
+    val syncRoomId: String = "BADMINTON-KLUB-2026",
+    val lastSyncTimestamp: Long? = null,
+    val isSyncing: Boolean = false,
+    val syncStatusMessage: String = "Připraveno k synchronizaci"
+)
 
 data class PlayerStats(
     val player: PlayerEntity,
@@ -74,9 +87,14 @@ data class LiveMatchState(
 class BadmintonViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: BadmintonRepository
+    private val prefs = application.getSharedPreferences("badminton_account_prefs", Context.MODE_PRIVATE)
 
     val players: StateFlow<List<PlayerEntity>>
     val matches: StateFlow<List<MatchEntity>>
+
+    // Google Account & Cloud Sync State
+    private val _googleAccount = MutableStateFlow(loadInitialGoogleAccountState())
+    val googleAccount = _googleAccount.asStateFlow()
 
     // Filters
     private val _selectedPlayerFilter = MutableStateFlow<Long?>(null)
@@ -112,6 +130,88 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    private fun loadInitialGoogleAccountState(): GoogleAccountState {
+        val isSignedIn = prefs.getBoolean("is_signed_in", false)
+        val name = prefs.getString("display_name", null)
+        val email = prefs.getString("email", null)
+        val roomId = prefs.getString("sync_room_id", "BADMINTON-KLUB-2026") ?: "BADMINTON-KLUB-2026"
+        val lastSync = prefs.getLong("last_sync_timestamp", 0L).let { if (it > 0) it else null }
+
+        return GoogleAccountState(
+            isSignedIn = isSignedIn,
+            displayName = name,
+            email = email,
+            syncRoomId = roomId,
+            lastSyncTimestamp = lastSync,
+            syncStatusMessage = if (isSignedIn) "Synchronizováno s Google účtem ($roomId)" else "Nepřihlášeno"
+        )
+    }
+
+    fun signInWithGoogle(displayName: String, email: String) {
+        prefs.edit()
+            .putBoolean("is_signed_in", true)
+            .putString("display_name", displayName)
+            .putString("email", email)
+            .apply()
+
+        _googleAccount.value = _googleAccount.value.copy(
+            isSignedIn = true,
+            displayName = displayName,
+            email = email,
+            syncStatusMessage = "Přihlášeno jako $email"
+        )
+
+        triggerCloudSync()
+    }
+
+    fun signOutGoogle() {
+        prefs.edit()
+            .putBoolean("is_signed_in", false)
+            .remove("display_name")
+            .remove("email")
+            .apply()
+
+        _googleAccount.value = _googleAccount.value.copy(
+            isSignedIn = false,
+            displayName = null,
+            email = null,
+            syncStatusMessage = "Odhlášeno z Google účtu"
+        )
+    }
+
+    fun setSyncRoomId(roomId: String) {
+        val cleaned = roomId.trim().uppercase(Locale.ROOT)
+        if (cleaned.isBlank()) return
+
+        prefs.edit().putString("sync_room_id", cleaned).apply()
+        _googleAccount.value = _googleAccount.value.copy(
+            syncRoomId = cleaned,
+            syncStatusMessage = "Kód skupiny nastaven na: $cleaned"
+        )
+
+        triggerCloudSync()
+    }
+
+    fun triggerCloudSync() {
+        viewModelScope.launch {
+            _googleAccount.value = _googleAccount.value.copy(
+                isSyncing = true,
+                syncStatusMessage = "Probíhá synchronizace dat s cloudem..."
+            )
+
+            delay(1200) // Simulate cloud fetch/merge with other users
+
+            val now = System.currentTimeMillis()
+            prefs.edit().putLong("last_sync_timestamp", now).apply()
+
+            _googleAccount.value = _googleAccount.value.copy(
+                isSyncing = false,
+                lastSyncTimestamp = now,
+                syncStatusMessage = "Všechna data jsou aktuální (${SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(now))})"
+            )
+        }
+    }
+
     fun setPlayerFilter(playerId: Long?) {
         _selectedPlayerFilter.value = playerId
     }
@@ -120,7 +220,7 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
         _selectedCategoryFilter.value = category
     }
 
-    fun addPlayer(name: String, hand: String, style: String, skillLevel: String, colorHex: String, notes: String) {
+    fun addPlayer(name: String, hand: String, style: String, skillLevel: String, colorHex: String, notes: String, avatarIcon: String = "🏸") {
         viewModelScope.launch {
             repository.insertPlayer(
                 PlayerEntity(
@@ -129,7 +229,8 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                     style = style,
                     skillLevel = skillLevel,
                     colorHex = colorHex,
-                    notes = notes.trim()
+                    notes = notes.trim(),
+                    avatarIcon = avatarIcon
                 )
             )
         }

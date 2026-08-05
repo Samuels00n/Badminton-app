@@ -60,7 +60,7 @@ import com.example.ui.theme.NaturalCardBorder
 @Composable
 fun PlayersScreen(
     players: List<PlayerEntity>,
-    onAddPlayer: (String, String, String, String, String, String) -> Unit,
+    onAddPlayer: (String, String, String, String, String, String, String) -> Unit,
     onDeletePlayer: (PlayerEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -137,8 +137,8 @@ fun PlayersScreen(
     if (showAddDialog) {
         AddPlayerDialog(
             onDismiss = { showAddDialog = false },
-            onConfirm = { name, hand, style, skill, color, notes ->
-                onAddPlayer(name, hand, style, skill, color, notes)
+            onConfirm = { name, hand, style, skill, color, notes, avatarIcon ->
+                onAddPlayer(name, hand, style, skill, color, notes, avatarIcon)
                 showAddDialog = false
             }
         )
@@ -172,6 +172,7 @@ private fun PlayerCardItem(
                 PlayerAvatar(
                     name = player.name,
                     colorHex = player.colorHex,
+                    avatarIcon = player.avatarIcon,
                     size = 48.dp
                 )
 
@@ -239,17 +240,22 @@ private fun PlayerCardItem(
 @Composable
 private fun AddPlayerDialog(
     onDismiss: () -> Unit,
-    onConfirm: (String, String, String, String, String, String) -> Unit
+    onConfirm: (String, String, String, String, String, String, String) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var hand by remember { mutableStateOf("Pravák") }
     var style by remember { mutableStateOf("Útočný") }
     var skill by remember { mutableStateOf("Pokročilý") }
     var selectedColorHex by remember { mutableStateOf("#386641") }
+    var selectedAvatarIcon by remember { mutableStateOf("🏸") }
     var notes by remember { mutableStateOf("") }
 
     val colorOptions = listOf(
         "#386641", "#A7C957", "#BC4749", "#6A994E", "#2E7D32", "#00695C", "#00BFA5", "#D4AF37"
+    )
+
+    val avatarOptions = listOf(
+        "🏸", "⚡", "🦅", "🏆", "🦁", "🐯", "🚀", "👑", "🎯", "🐼", "🦊", "🌟", "🥇", "💥", "🛡️", "INITIALS"
     )
 
     AlertDialog(
@@ -257,6 +263,36 @@ private fun AddPlayerDialog(
         title = { Text("Přidat Nového Hráče", fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                // Live Avatar Preview Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    PlayerAvatar(
+                        name = if (name.isNotBlank()) name else "Nový Hráč",
+                        colorHex = selectedColorHex,
+                        avatarIcon = selectedAvatarIcon,
+                        size = 52.dp
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = if (name.isNotBlank()) name else "Jméno hráče...",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp
+                        )
+                        Text(
+                            text = "$hand • $style • $skill",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                        )
+                    }
+                }
+
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -267,7 +303,78 @@ private fun AddPlayerDialog(
                         .testTag("new_player_name_input")
                 )
 
-                // Hand Dropdown
+                // Avatar Icon Selection
+                Text("Profilová fotka / Ikona", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(84.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        .padding(8.dp)
+                ) {
+                    item {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.padding(bottom = 6.dp)
+                        ) {
+                            avatarOptions.take(8).forEach { icon ->
+                                val isSelected = selectedAvatarIcon == icon
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(if (isSelected) ForestGreenPrimary else MaterialTheme.colorScheme.surface)
+                                        .border(
+                                            width = if (isSelected) 2.dp else 1.dp,
+                                            color = if (isSelected) Color.Black else NaturalCardBorder,
+                                            shape = RoundedCornerShape(10.dp)
+                                        )
+                                        .clickable { selectedAvatarIcon = icon },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = if (icon == "INITIALS") "ABC" else icon,
+                                        fontSize = if (icon == "INITIALS") 10.sp else 16.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    item {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            avatarOptions.drop(8).forEach { icon ->
+                                val isSelected = selectedAvatarIcon == icon
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(if (isSelected) ForestGreenPrimary else MaterialTheme.colorScheme.surface)
+                                        .border(
+                                            width = if (isSelected) 2.dp else 1.dp,
+                                            color = if (isSelected) Color.Black else NaturalCardBorder,
+                                            shape = RoundedCornerShape(10.dp)
+                                        )
+                                        .clickable { selectedAvatarIcon = icon },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = if (icon == "INITIALS") "ABC" else icon,
+                                        fontSize = if (icon == "INITIALS") 10.sp else 16.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Hand Dropdown & Level
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -331,7 +438,7 @@ private fun AddPlayerDialog(
             Button(
                 onClick = {
                     if (name.isNotBlank()) {
-                        onConfirm(name, hand, style, skill, selectedColorHex, notes)
+                        onConfirm(name, hand, style, skill, selectedColorHex, notes, selectedAvatarIcon)
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = ForestGreenPrimary),

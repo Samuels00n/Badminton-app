@@ -13,5 +13,6 @@ data class PlayerEntity(
     val skillLevel: String = "Pokročilý", // Začátečník, Pokročilý, Profesionál
     val notes: String = "",
     val colorHex: String = "#00897B",
+    val avatarIcon: String = "🏸",
     val createdAt: Long = System.currentTimeMillis()
 )

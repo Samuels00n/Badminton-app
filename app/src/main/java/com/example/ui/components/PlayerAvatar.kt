@@ -23,6 +23,7 @@ import com.example.ui.theme.NaturalWarmChip
 fun PlayerAvatar(
     name: String,
     colorHex: String,
+    avatarIcon: String = "🏸",
     modifier: Modifier = Modifier,
     size: Dp = 40.dp
 ) {
@@ -46,11 +47,18 @@ fun PlayerAvatar(
             .border(1.dp, Color.Black.copy(alpha = 0.08f), RoundedCornerShape(12.dp)),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = if (initials.isNotEmpty()) initials else "?",
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            fontSize = (size.value * 0.4).sp
-        )
+        if (avatarIcon.isNotBlank() && avatarIcon != "INITIALS") {
+            Text(
+                text = avatarIcon,
+                fontSize = (size.value * 0.52).sp
+            )
+        } else {
+            Text(
+                text = if (initials.isNotEmpty()) initials else "?",
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = (size.value * 0.4).sp
+            )
+        }
     }
 }
