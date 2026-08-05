@@ -126,7 +126,13 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
             )
 
         viewModelScope.launch {
-            repository.seedInitialDataIfNeeded()
+            repository.deleteAllData()
+        }
+    }
+
+    fun deleteAllData() {
+        viewModelScope.launch {
+            repository.deleteAllData()
         }
     }
 
@@ -239,6 +245,12 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
     fun deletePlayer(player: PlayerEntity) {
         viewModelScope.launch {
             repository.deletePlayer(player)
+        }
+    }
+
+    fun updatePlayer(player: PlayerEntity) {
+        viewModelScope.launch {
+            repository.updatePlayer(player)
         }
     }
 

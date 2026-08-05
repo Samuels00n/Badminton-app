@@ -25,5 +25,25 @@ data class MatchEntity(
     val courtType: String = "Hala", // Hala, Venku, Jiné
     val durationMinutes: Int = 30,
     val notes: String = "",
+    val setsSequence: String = "", // e.g. "21:18,21:15,19:21,21:14" for unlimited sets
     val timestamp: Long = System.currentTimeMillis()
-)
+) {
+    fun getAllSetScores(): List<Pair<Int, Int>> {
+        if (setsSequence.isNotBlank()) {
+            val list = setsSequence.split(",").mapNotNull { part ->
+                val scores = part.trim().split(":")
+                if (scores.size == 2) {
+                    val s1 = scores[0].toIntOrNull()
+                    val s2 = scores[1].toIntOrNull()
+                    if (s1 != null && s2 != null) Pair(s1, s2) else null
+                } else null
+            }
+            if (list.isNotEmpty()) return list
+        }
+        val list = mutableListOf<Pair<Int, Int>>()
+        list.add(Pair(set1Player1, set1Player2))
+        if (set2Player1 != null && set2Player2 != null) list.add(Pair(set2Player1, set2Player2))
+        if (set3Player1 != null && set3Player2 != null) list.add(Pair(set3Player1, set3Player2))
+        return list
+    }
+}

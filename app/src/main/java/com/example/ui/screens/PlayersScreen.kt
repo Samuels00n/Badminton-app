@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -61,10 +62,12 @@ import com.example.ui.theme.NaturalCardBorder
 fun PlayersScreen(
     players: List<PlayerEntity>,
     onAddPlayer: (String, String, String, String, String, String, String) -> Unit,
+    onUpdatePlayer: (PlayerEntity) -> Unit = {},
     onDeletePlayer: (PlayerEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
+    var editingPlayer by remember { mutableStateOf<PlayerEntity?>(null) }
 
     Column(
         modifier = modifier
@@ -123,6 +126,7 @@ fun PlayersScreen(
                 items(players, key = { it.id }) { player ->
                     PlayerCardItem(
                         player = player,
+                        onEdit = { editingPlayer = player },
                         onDelete = { onDeletePlayer(player) }
                     )
                 }
@@ -143,11 +147,32 @@ fun PlayersScreen(
             }
         )
     }
+
+    editingPlayer?.let { playerToEdit ->
+        AddPlayerDialog(
+            initialPlayer = playerToEdit,
+            onDismiss = { editingPlayer = null },
+            onConfirm = { name, hand, style, skill, color, notes, avatarIcon ->
+                val updated = playerToEdit.copy(
+                    name = name,
+                    hand = hand,
+                    style = style,
+                    skillLevel = skill,
+                    colorHex = color,
+                    notes = notes,
+                    avatarIcon = avatarIcon
+                )
+                onUpdatePlayer(updated)
+                editingPlayer = null
+            }
+        )
+    }
 }
 
 @Composable
 private fun PlayerCardItem(
     player: PlayerEntity,
+    onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     Card(
@@ -222,15 +247,28 @@ private fun PlayerCardItem(
                 }
             }
 
-            IconButton(
-                onClick = onDelete,
-                modifier = Modifier.testTag("delete_player_btn_${player.id}")
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Smazat hráče",
-                    tint = CoralRedLoss.copy(alpha = 0.8f)
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = onEdit,
+                    modifier = Modifier.testTag("edit_player_btn_${player.id}")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Upravit hráče",
+                        tint = ForestGreenPrimary
+                    )
+                }
+
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.testTag("delete_player_btn_${player.id}")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Smazat hráče",
+                        tint = CoralRedLoss.copy(alpha = 0.8f)
+                    )
+                }
             }
         }
     }
@@ -239,16 +277,17 @@ private fun PlayerCardItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddPlayerDialog(
+    initialPlayer: PlayerEntity? = null,
     onDismiss: () -> Unit,
     onConfirm: (String, String, String, String, String, String, String) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
-    var hand by remember { mutableStateOf("Pravák") }
-    var style by remember { mutableStateOf("Útočný") }
-    var skill by remember { mutableStateOf("Pokročilý") }
-    var selectedColorHex by remember { mutableStateOf("#386641") }
-    var selectedAvatarIcon by remember { mutableStateOf("🏸") }
-    var notes by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(initialPlayer?.name ?: "") }
+    var hand by remember { mutableStateOf(initialPlayer?.hand ?: "Pravák") }
+    var style by remember { mutableStateOf(initialPlayer?.style ?: "Útočný") }
+    var skill by remember { mutableStateOf(initialPlayer?.skillLevel ?: "Pokročilý") }
+    var selectedColorHex by remember { mutableStateOf(initialPlayer?.colorHex ?: "#386641") }
+    var selectedAvatarIcon by remember { mutableStateOf(initialPlayer?.avatarIcon ?: "🏸") }
+    var notes by remember { mutableStateOf(initialPlayer?.notes ?: "") }
 
     val colorOptions = listOf(
         "#386641", "#A7C957", "#BC4749", "#6A994E", "#2E7D32", "#00695C", "#00BFA5", "#D4AF37"
@@ -260,7 +299,7 @@ private fun AddPlayerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Přidat Nového Hráče", fontWeight = FontWeight.Bold) },
+        title = { Text(if (initialPlayer == null) "Přidat Nového Hráče" else "Upravit Parametry Hráče", fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 // Live Avatar Preview Header
@@ -445,7 +484,7 @@ private fun AddPlayerDialog(
                 enabled = name.isNotBlank(),
                 modifier = Modifier.testTag("save_new_player_btn")
             ) {
-                Text("Uložit hráče")
+                Text(if (initialPlayer == null) "Uložit hráče" else "Uložit změny")
             }
         },
         dismissButton = {

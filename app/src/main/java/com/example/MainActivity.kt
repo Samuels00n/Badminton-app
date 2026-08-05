@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.sp
 import com.example.ui.components.PlayerAvatar
 import com.example.ui.screens.AddMatchScreen
 import com.example.ui.screens.DashboardScreen
+import com.example.ui.theme.CoralRedLoss
 import com.example.ui.screens.MatchesScreen
 import com.example.ui.screens.PlayersScreen
 import com.example.ui.screens.StatsScreen
@@ -233,6 +234,7 @@ fun MainAppContent(viewModel: BadmintonViewModel) {
                     onAddPlayer = { name, hand, style, skill, color, notes, avatarIcon ->
                         viewModel.addPlayer(name, hand, style, skill, color, notes, avatarIcon)
                     },
+                    onUpdatePlayer = { viewModel.updatePlayer(it) },
                     onDeletePlayer = { viewModel.deletePlayer(it) }
                 )
             }
@@ -408,6 +410,10 @@ fun GoogleSyncDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+        titleContentColor = MaterialTheme.colorScheme.onSurface,
+        textContentColor = MaterialTheme.colorScheme.onSurface,
+        shape = RoundedCornerShape(24.dp),
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
@@ -432,20 +438,20 @@ fun GoogleSyncDialog(
                 if (!accountState.isSignedIn) {
                     Card(
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = ForestGreenContainer)
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
                             Text(
                                 text = "Propojte svůj Google účet",
                                 fontWeight = FontWeight.Bold,
-                                color = ForestGreenPrimary,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 fontSize = 14.sp
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "Přihlášením propojíte aplikaci s ostatními mobilními telefony a sdíleným cloudem.",
                                 fontSize = 12.sp,
-                                color = ForestGreenPrimary.copy(alpha = 0.85f)
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
                             )
                         }
                     }
@@ -498,7 +504,8 @@ fun GoogleSyncDialog(
                                 Text(
                                     text = accountState.displayName ?: "Google Uživatel",
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 15.sp
+                                    fontSize = 15.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
                                     text = accountState.email ?: "",
@@ -507,7 +514,7 @@ fun GoogleSyncDialog(
                                 )
                             }
                             TextButton(onClick = onSignOut) {
-                                Text("Odhlásit", color = Color(0xFFBC4749), fontSize = 12.sp)
+                                Text("Odhlásit", color = CoralRedLoss, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -517,7 +524,7 @@ fun GoogleSyncDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(ForestGreenContainer)
+                            .background(MaterialTheme.colorScheme.primaryContainer)
                             .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -525,13 +532,13 @@ fun GoogleSyncDialog(
                             CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
                                 strokeWidth = 2.dp,
-                                color = ForestGreenPrimary
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         } else {
                             Icon(
                                 imageVector = Icons.Default.CloudDone,
                                 contentDescription = null,
-                                tint = ForestGreenPrimary,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -540,7 +547,7 @@ fun GoogleSyncDialog(
                             text = accountState.syncStatusMessage,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = ForestGreenPrimary
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
 

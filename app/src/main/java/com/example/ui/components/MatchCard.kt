@@ -321,30 +321,22 @@ fun MatchCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        text = "1. set: ${match.set1Player1}:${match.set1Player2}",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-                    )
-                    if (match.set2Player1 != null && match.set2Player2 != null) {
+                val allSets = match.getAllSetScores()
+                Row(
+                    modifier = Modifier.weight(1f, fill = false),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    allSets.forEachIndexed { index, (p1Score, p2Score) ->
                         Text(
-                            text = "2. set: ${match.set2Player1}:${match.set2Player2}",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-                        )
-                    }
-                    if (match.set3Player1 != null && match.set3Player2 != null) {
-                        Text(
-                            text = "3. set: ${match.set3Player1}:${match.set3Player2}",
+                            text = "${index + 1}. set: $p1Score:$p2Score",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Text(
                     text = "${match.durationMinutes} min • ${match.courtType}",

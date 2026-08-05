@@ -16,7 +16,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -27,7 +29,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -51,6 +55,7 @@ import com.example.data.entity.MatchEntity
 import com.example.data.entity.PlayerEntity
 import com.example.ui.components.PlayerAvatar
 import com.example.ui.components.ScoreBoard
+import com.example.ui.theme.CoralRedLoss
 import com.example.ui.theme.ForestGreenPrimary
 import com.example.ui.viewmodel.LiveMatchState
 
@@ -321,14 +326,7 @@ private fun ManualMatchForm(
     var selectedP1 by remember { mutableStateOf<PlayerEntity?>(players.firstOrNull()) }
     var selectedP2 by remember { mutableStateOf<PlayerEntity?>(players.getOrNull(1)) }
 
-    var set1P1 by remember { mutableStateOf("21") }
-    var set1P2 by remember { mutableStateOf("18") }
-
-    var set2P1 by remember { mutableStateOf("21") }
-    var set2P2 by remember { mutableStateOf("15") }
-
-    var set3P1 by remember { mutableStateOf("") }
-    var set3P2 by remember { mutableStateOf("") }
+    var setsList by remember { mutableStateOf(listOf(Pair("21", "18"), Pair("21", "15"))) }
 
     var notes by remember { mutableStateOf("") }
 
@@ -359,92 +357,71 @@ private fun ManualMatchForm(
                     Text("Skóre po setech (body):", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Set 1 Row
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text("1. Set:", fontWeight = FontWeight.Bold, modifier = Modifier.width(55.dp))
-                        OutlinedTextField(
-                            value = set1P1,
-                            onValueChange = { set1P1 = it },
-                            label = { Text("Hráč 1") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier
-                                .weight(1f)
-                                .testTag("set1_p1_input")
-                        )
-                        Text(":", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
-                        OutlinedTextField(
-                            value = set1P2,
-                            onValueChange = { set1P2 = it },
-                            label = { Text("Hráč 2") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier
-                                .weight(1f)
-                                .testTag("set1_p2_input")
-                        )
+                    setsList.forEachIndexed { index, pair ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text("${index + 1}. Set:", fontWeight = FontWeight.Bold, modifier = Modifier.width(55.dp))
+                            OutlinedTextField(
+                                value = pair.first,
+                                onValueChange = { newValue ->
+                                    val updated = setsList.toMutableList()
+                                    updated[index] = Pair(newValue, pair.second)
+                                    setsList = updated
+                                },
+                                label = { Text("Hráč 1") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("set${index + 1}_p1_input")
+                            )
+                            Text(":", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
+                            OutlinedTextField(
+                                value = pair.second,
+                                onValueChange = { newValue ->
+                                    val updated = setsList.toMutableList()
+                                    updated[index] = Pair(pair.first, newValue)
+                                    setsList = updated
+                                },
+                                label = { Text("Hráč 2") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("set${index + 1}_p2_input")
+                            )
+                            if (setsList.size > 1) {
+                                IconButton(
+                                    onClick = {
+                                        val updated = setsList.toMutableList()
+                                        updated.removeAt(index)
+                                        setsList = updated
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Odebrat set",
+                                        tint = CoralRedLoss
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Set 2 Row
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    OutlinedButton(
+                        onClick = {
+                            setsList = setsList + Pair("", "")
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("add_set_button")
                     ) {
-                        Text("2. Set:", fontWeight = FontWeight.Bold, modifier = Modifier.width(55.dp))
-                        OutlinedTextField(
-                            value = set2P1,
-                            onValueChange = { set2P1 = it },
-                            label = { Text("Hráč 1") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier
-                                .weight(1f)
-                                .testTag("set2_p1_input")
-                        )
-                        Text(":", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
-                        OutlinedTextField(
-                            value = set2P2,
-                            onValueChange = { set2P2 = it },
-                            label = { Text("Hráč 2") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier
-                                .weight(1f)
-                                .testTag("set2_p2_input")
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Set 3 Row (Optional)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text("3. Set:", fontWeight = FontWeight.Bold, modifier = Modifier.width(55.dp))
-                        OutlinedTextField(
-                            value = set3P1,
-                            onValueChange = { set3P1 = it },
-                            label = { Text("Volitelné") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier
-                                .weight(1f)
-                                .testTag("set3_p1_input")
-                        )
-                        Text(":", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
-                        OutlinedTextField(
-                            value = set3P2,
-                            onValueChange = { set3P2 = it },
-                            label = { Text("Volitelné") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier
-                                .weight(1f)
-                                .testTag("set3_p2_input")
-                        )
+                        Icon(imageVector = Icons.Default.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("+ Přidat další set", fontWeight = FontWeight.Bold)
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -463,25 +440,22 @@ private fun ManualMatchForm(
                             val p1 = selectedP1 ?: return@Button
                             val p2 = selectedP2 ?: return@Button
 
-                            val s1P1 = set1P1.toIntOrNull() ?: 21
-                            val s1P2 = set1P2.toIntOrNull() ?: 18
+                            val parsedSets = setsList.mapNotNull { (s1Str, s2Str) ->
+                                val s1 = s1Str.toIntOrNull()
+                                val s2 = s2Str.toIntOrNull()
+                                if (s1 != null && s2 != null) Pair(s1, s2) else null
+                            }
 
-                            val s2P1 = set2P1.toIntOrNull() ?: 21
-                            val s2P2 = set2P2.toIntOrNull() ?: 15
-
-                            val s3P1 = set3P1.toIntOrNull()
-                            val s3P2 = set3P2.toIntOrNull()
+                            val finalSets = if (parsedSets.isNotEmpty()) parsedSets else listOf(Pair(21, 18), Pair(21, 15))
 
                             var setsP1 = 0
                             var setsP2 = 0
-
-                            if (s1P1 > s1P2) setsP1++ else setsP2++
-                            if (s2P1 > s2P2) setsP1++ else setsP2++
-                            if (s3P1 != null && s3P2 != null) {
-                                if (s3P1 > s3P2) setsP1++ else setsP2++
+                            finalSets.forEach { (s1, s2) ->
+                                if (s1 > s2) setsP1++ else if (s2 > s1) setsP2++
                             }
 
-                            val winner = if (setsP1 > setsP2) 1 else 2
+                            val winner = if (setsP1 >= setsP2) 1 else 2
+                            val setsSequence = finalSets.joinToString(",") { "${it.first}:${it.second}" }
 
                             val match = MatchEntity(
                                 matchType = matchType,
@@ -491,14 +465,15 @@ private fun ManualMatchForm(
                                 setsWinner = winner,
                                 scoreSetsPlayer1 = setsP1,
                                 scoreSetsPlayer2 = setsP2,
-                                set1Player1 = s1P1,
-                                set1Player2 = s1P2,
-                                set2Player1 = s2P1,
-                                set2Player2 = s2P2,
-                                set3Player1 = s3P1,
-                                set3Player2 = s3P2,
+                                set1Player1 = finalSets.getOrNull(0)?.first ?: 21,
+                                set1Player2 = finalSets.getOrNull(0)?.second ?: 18,
+                                set2Player1 = finalSets.getOrNull(1)?.first,
+                                set2Player2 = finalSets.getOrNull(1)?.second,
+                                set3Player1 = finalSets.getOrNull(2)?.first,
+                                set3Player2 = finalSets.getOrNull(2)?.second,
                                 courtType = courtType,
                                 notes = notes,
+                                setsSequence = setsSequence,
                                 timestamp = System.currentTimeMillis()
                             )
 

@@ -93,7 +93,7 @@ fun DashboardScreen(
                     .clip(RoundedCornerShape(16.dp))
                     .clickable { onOpenGoogleSync() },
                 colors = CardDefaults.cardColors(
-                    containerColor = if (googleAccountState.isSignedIn) ForestGreenContainer else MaterialTheme.colorScheme.surfaceVariant
+                    containerColor = if (googleAccountState.isSignedIn) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
                 ),
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp,
