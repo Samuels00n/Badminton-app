@@ -65,6 +65,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextOverflow
 import com.example.ui.components.PlayerAvatar
 import com.example.ui.screens.AddMatchScreen
 import com.example.ui.screens.DashboardScreen
@@ -155,25 +156,6 @@ fun MainAppContent(viewModel: BadmintonViewModel) {
                     currentDestination = destination
                 }
             )
-        },
-        floatingActionButton = {
-            if (currentDestination != AppNavDestination.ADD_MATCH) {
-                FloatingActionButton(
-                    onClick = { currentDestination = AppNavDestination.ADD_MATCH },
-                    containerColor = OliveAccent,
-                    contentColor = Color(0xFF1A1C19),
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier
-                        .padding(bottom = 8.dp)
-                        .testTag("fab_add_match")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Přidat zápas",
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-            }
         }
     ) { innerPadding ->
         Box(
@@ -334,13 +316,11 @@ fun NaturalBottomNavigationBar(
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp),
+            .padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 8.dp),
         contentAlignment = Alignment.Center
     ) {
         Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(68.dp),
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
             color = ForestGreenDark,
             tonalElevation = 8.dp,
@@ -348,9 +328,9 @@ fun NaturalBottomNavigationBar(
         ) {
             Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 8.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp, horizontal = 2.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 AppNavDestination.values().forEach { dest ->
@@ -360,23 +340,24 @@ fun NaturalBottomNavigationBar(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
+                            .weight(1f)
+                            .clip(RoundedCornerShape(14.dp))
                             .clickable { onNavigate(dest) }
-                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                            .padding(vertical = 4.dp, horizontal = 1.dp)
                             .testTag(dest.testTag)
                     ) {
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
+                                .clip(RoundedCornerShape(12.dp))
                                 .background(if (isSelected) OliveAccent else Color.Transparent)
-                                .padding(horizontal = 14.dp, vertical = 4.dp),
+                                .padding(horizontal = 10.dp, vertical = 3.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = dest.icon,
                                 contentDescription = dest.title,
                                 tint = if (isSelected) Color(0xFF1A1C19) else Color.White.copy(alpha = 0.65f),
-                                modifier = Modifier.size(22.dp)
+                                modifier = Modifier.size(20.dp)
                             )
                         }
 
@@ -384,7 +365,10 @@ fun NaturalBottomNavigationBar(
 
                         Text(
                             text = dest.title,
-                            fontSize = 11.sp,
+                            fontSize = 10.5.sp,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
                             fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium,
                             color = if (isSelected) OliveAccent else Color.White.copy(alpha = 0.65f)
                         )
