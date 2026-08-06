@@ -17,7 +17,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -310,7 +313,14 @@ private fun AddPlayerDialog(
     var notes by remember { mutableStateOf(initialPlayer?.notes ?: "") }
 
     val colorOptions = listOf(
-        "#386641", "#A7C957", "#BC4749", "#6A994E", "#2E7D32", "#00695C", "#00BFA5", "#D4AF37"
+        "#2E7D32", // Zelená
+        "#1976D2", // Modrá
+        "#D32F2F", // Červená
+        "#E65100", // Oranžová
+        "#FFFFFF", // Bílá
+        "#212121", // Černá
+        "#F57F17", // Zlatá
+        "#C2185B"  // Růžová
     )
 
     val avatarOptions = listOf(
@@ -321,7 +331,12 @@ private fun AddPlayerDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (initialPlayer == null) "Přidat nového hráče" else "Upravit parametry hráče", fontWeight = FontWeight.Bold) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 // Live Avatar Preview Header
                 Row(
                     modifier = Modifier
@@ -463,19 +478,19 @@ private fun AddPlayerDialog(
 
                 Text("Barva profilu", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     colorOptions.forEach { hex ->
-                        val isSel = selectedColorHex == hex
+                        val isSel = selectedColorHex.equals(hex, ignoreCase = true)
                         Box(
                             modifier = Modifier
-                                .size(28.dp)
+                                .size(30.dp)
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(Color(android.graphics.Color.parseColor(hex)))
                                 .border(
                                     width = if (isSel) 3.dp else 1.dp,
-                                    color = if (isSel) Color.Black else Color.Transparent,
+                                    color = if (isSel) ForestGreenPrimary else Color(0xFFCCCCCC),
                                     shape = RoundedCornerShape(8.dp)
                                 )
                                 .clickable { selectedColorHex = hex }
@@ -487,7 +502,13 @@ private fun AddPlayerDialog(
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
-                    label = { Text("Pár slov o sobě (oblíbené údery, styl...)") },
+                    label = { Text("Popis hráče") },
+                    placeholder = { Text("Pár slov o sobě (oblíbené údery, styl...)") },
+                    textStyle = TextStyle(
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Normal
+                    ),
                     minLines = 2,
                     maxLines = 4,
                     modifier = Modifier

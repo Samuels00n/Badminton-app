@@ -33,6 +33,14 @@ fun PlayerAvatar(
         ForestGreenPrimary
     }
 
+    val isLightBg = try {
+        val parsed = android.graphics.Color.parseColor(colorHex)
+        val luminance = (0.299 * android.graphics.Color.red(parsed) + 0.587 * android.graphics.Color.green(parsed) + 0.114 * android.graphics.Color.blue(parsed)) / 255.0
+        luminance > 0.65
+    } catch (e: Exception) {
+        false
+    }
+
     val initials = name.trim().split(" ")
         .mapNotNull { it.firstOrNull()?.toString() }
         .take(2)
@@ -44,7 +52,7 @@ fun PlayerAvatar(
             .size(size)
             .clip(RoundedCornerShape(12.dp))
             .background(parseColor)
-            .border(1.dp, Color.Black.copy(alpha = 0.08f), RoundedCornerShape(12.dp)),
+            .border(1.dp, if (isLightBg) Color(0xFFCCCCCC) else Color.Black.copy(alpha = 0.08f), RoundedCornerShape(12.dp)),
         contentAlignment = Alignment.Center
     ) {
         if (avatarIcon.isNotBlank() && avatarIcon != "INITIALS") {
@@ -55,7 +63,7 @@ fun PlayerAvatar(
         } else {
             Text(
                 text = if (initials.isNotEmpty()) initials else "?",
-                color = Color.White,
+                color = if (isLightBg) Color.Black else Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = (size.value * 0.4).sp
             )
