@@ -360,12 +360,15 @@ fun ScoreBoard(
                         }
                         Button(
                             onClick = onSaveMatch,
-                            colors = ButtonDefaults.buttonColors(containerColor = ForestGreenPrimary),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = ForestGreenPrimary,
+                                contentColor = Color.White
+                            ),
                             modifier = Modifier
                                 .weight(1f)
                                 .testTag("save_finished_live_match_btn")
                         ) {
-                            Text("Uložit výsledky", fontWeight = FontWeight.Bold)
+                            Text("Uložit výsledky", fontWeight = FontWeight.Bold, color = Color.White)
                         }
                     }
                 }

@@ -290,9 +290,9 @@ private fun LiveMatchSetupForm(
                             .height(50.dp)
                             .testTag("start_live_match_btn")
                     ) {
-                        Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null)
+                        Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, tint = Color.White)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Spustit živé počítadlo skóre", fontWeight = FontWeight.Bold)
+                        Text("Spustit živé počítadlo skóre", fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
             }
@@ -421,7 +421,7 @@ private fun ManualMatchForm(
                     ) {
                         Icon(imageVector = Icons.Default.Add, contentDescription = null)
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("+ Přidat další set", fontWeight = FontWeight.Bold)
+                        Text("Přidat další set", fontWeight = FontWeight.Bold)
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -486,9 +486,9 @@ private fun ManualMatchForm(
                             .height(50.dp)
                             .testTag("save_manual_match_btn")
                     ) {
-                        Icon(imageVector = Icons.Default.Check, contentDescription = null)
+                        Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = Color.White)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Uložit zápas do historie", fontWeight = FontWeight.Bold)
+                        Text("Uložit zápas do historie", fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
             }
@@ -538,6 +538,16 @@ private fun PlayerDropdown(
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
+            leadingIcon = if (selectedPlayer != null) {
+                {
+                    PlayerAvatar(
+                        name = selectedPlayer.name,
+                        colorHex = selectedPlayer.colorHex,
+                        avatarIcon = selectedPlayer.avatarIcon,
+                        size = 28.dp
+                    )
+                }
+            } else null,
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
                 .fillMaxWidth()
@@ -552,8 +562,13 @@ private fun PlayerDropdown(
                 DropdownMenuItem(
                     text = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            PlayerAvatar(name = p.name, colorHex = p.colorHex, size = 24.dp)
-                            Spacer(modifier = Modifier.width(8.dp))
+                            PlayerAvatar(
+                                name = p.name,
+                                colorHex = p.colorHex,
+                                avatarIcon = p.avatarIcon,
+                                size = 28.dp
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
                             Text(p.name, fontWeight = FontWeight.Bold)
                         }
                     },

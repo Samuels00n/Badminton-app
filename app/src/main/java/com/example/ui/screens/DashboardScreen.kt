@@ -85,125 +85,6 @@ fun DashboardScreen(
             )
         }
 
-        // Google Cloud Sync Banner
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .clickable { onOpenGoogleSync() },
-                colors = CardDefaults.cardColors(
-                    containerColor = if (googleAccountState.isSignedIn) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
-                ),
-                border = androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    if (googleAccountState.isSignedIn) ForestGreenPrimary.copy(alpha = 0.5f) else NaturalCardBorder
-                )
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(
-                            imageVector = if (googleAccountState.isSignedIn) Icons.Default.CloudDone else Icons.Default.CloudSync,
-                            contentDescription = null,
-                            tint = ForestGreenPrimary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = if (googleAccountState.isSignedIn)
-                                    "Google Sync: ${googleAccountState.displayName}"
-                                else
-                                    "Připojit Google účet pro propojitelnost",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = if (googleAccountState.isSignedIn)
-                                    "Kód skupiny: ${googleAccountState.syncRoomId} • ${googleAccountState.syncStatusMessage}"
-                                else
-                                    "Klikněte zde pro nastavení sdílení s ostatními mobily",
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                            )
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(ForestGreenPrimary)
-                            .padding(horizontal = 10.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = if (googleAccountState.isSignedIn) "Spravovat" else "Přihlásit",
-                            color = Color.White,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-        }
-
-        // Quick Action Buttons Row
-        item {
-            Column {
-                Text(
-                    text = "Rychlé akce",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // New Match Button
-                    Button(
-                        onClick = onNavigateToAddMatch,
-                        colors = ButtonDefaults.buttonColors(containerColor = ForestGreenPrimary),
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(54.dp)
-                            .testTag("quick_add_match_btn")
-                    ) {
-                        Icon(imageVector = Icons.Default.Add, contentDescription = null)
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Zapsat zápas", fontWeight = FontWeight.Bold)
-                    }
-
-                    // Add Player Button
-                    OutlinedButton(
-                        onClick = onNavigateToPlayers,
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(54.dp)
-                            .testTag("quick_add_player_btn")
-                    ) {
-                        Icon(imageVector = Icons.Default.PersonAdd, contentDescription = null)
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Hráči", fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-        }
-
         // Top Players Leaderboard Mini Preview
         if (topPlayers.isNotEmpty()) {
             item {
@@ -379,7 +260,18 @@ fun DashboardScreen(
                             colors = ButtonDefaults.buttonColors(containerColor = ForestGreenPrimary),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text("Přidat první zápas")
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Přidat první zápas",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }

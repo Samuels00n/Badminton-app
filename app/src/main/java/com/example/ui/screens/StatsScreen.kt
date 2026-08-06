@@ -16,9 +16,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.SportsTennis
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -130,7 +132,7 @@ fun StatsScreen(
 
     val activePlayer = selectedPlayer ?: players.first()
     val playerStat = viewModel.calculatePlayerStats(activePlayer, matches)
-    val monthlyStats = viewModel.calculateMonthlyStatsForPlayer(activePlayer, matches)
+    val last30Stats = viewModel.calculateLast30DaysStats(activePlayer, matches)
 
     val h2h = if (selectedOpponent != null && selectedOpponent?.id != activePlayer.id) {
         viewModel.calculateHeadToHead(activePlayer, selectedOpponent!!, matches)
@@ -166,80 +168,312 @@ fun StatsScreen(
             )
         }
 
-        // Summary Performance Cards
+        // Section: Celkový přehled
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Win Rate Card
-                Card(
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = ForestGreenContainer)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text("Úspěšnost", fontSize = 12.sp, color = ForestGreenPrimary, fontWeight = FontWeight.Bold)
-                        Text(
-                            text = "${playerStat.winRate.toInt()}%",
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = ForestGreenPrimary
-                        )
-                        Text(
-                            text = "${playerStat.wins} výher / ${playerStat.losses} proher",
-                            fontSize = 11.sp,
-                            color = ForestGreenPrimary.copy(alpha = 0.8f)
-                        )
-                    }
-                }
+            Column {
+                Text(
+                    text = "Celkový přehled",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
 
-                // Sets & Points Card
-                Card(
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    // Win Rate Card ("Úspěšnost")
+                    Card(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = ForestGreenContainer),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, ForestGreenPrimary.copy(alpha = 0.2f))
                     ) {
-                        Text("Skóre Sety", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        Text(
-                            text = "${playerStat.setsWon} : ${playerStat.setsLost}",
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Body: ${playerStat.pointsScored} / ${playerStat.pointsConceded}",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp, horizontal = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Úspěšnost",
+                                fontSize = 12.sp,
+                                color = ForestGreenPrimary,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "${playerStat.winRate.toInt()}%",
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = ForestGreenPrimary
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Surface(
+                                color = ForestGreenPrimary.copy(alpha = 0.12f),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = "${playerStat.wins} výher / ${playerStat.losses} proher",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = ForestGreenPrimary,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // Sets & Points Card ("Sety")
+                    Card(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, NaturalCardBorder)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp, horizontal = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Sety",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "${playerStat.setsWon} : ${playerStat.setsLost}",
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Surface(
+                                color = MaterialTheme.colorScheme.surface,
+                                shape = RoundedCornerShape(8.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, NaturalCardBorder)
+                            ) {
+                                Text(
+                                    text = "Body: ${playerStat.pointsScored} : ${playerStat.pointsConceded}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
 
-        // Monthly Trend Bar Chart
-        if (monthlyStats.isNotEmpty()) {
-            item {
-                val chartItems = monthlyStats.map {
-                    BarChartItem(
-                        label = it.monthYear,
-                        value = it.winRate
-                    )
-                }
+        // Section: Statistiky za minulý měsíc (30 dní)
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = androidx.compose.foundation.BorderStroke(1.dp, NaturalCardBorder),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(18.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.DateRange,
+                                contentDescription = null,
+                                tint = ForestGreenPrimary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Statistiky za minulý měsíc",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
 
-                CustomBarChart(
-                    items = chartItems,
-                    title = "Forma v čase (% výher za měsíc)",
-                    unit = "%",
-                    barColor = ForestGreenPrimary
-                )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(ForestGreenContainer)
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = "Posledních 30 dní",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = ForestGreenPrimary
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    if (last30Stats.totalMatches == 0) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "V posledních 30 dnech nebyl odehrán žádný zápas.",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
+                    } else {
+                        // Grid of 4 key metrics
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            // Počet zápasů
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                    .padding(12.dp)
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Počet zápasů",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "${last30Stats.totalMatches}",
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "${last30Stats.wins} výher / ${last30Stats.losses} proher",
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                }
+                            }
+
+                            // Úspěšnost
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(ForestGreenContainer)
+                                    .padding(12.dp)
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Úspěšnost",
+                                        fontSize = 11.sp,
+                                        color = ForestGreenPrimary,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "${last30Stats.winRate.toInt()}%",
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = ForestGreenPrimary
+                                    )
+                                    Text(
+                                        text = if (last30Stats.winRate >= 50f) "Aktivní forma" else "Příležitost k růstu",
+                                        fontSize = 10.sp,
+                                        color = ForestGreenPrimary.copy(alpha = 0.8f)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            // Sety
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                    .padding(12.dp)
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Sety",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "${last30Stats.setsWon} : ${last30Stats.setsLost}",
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    val diffSets = last30Stats.setsWon - last30Stats.setsLost
+                                    Text(
+                                        text = "Bilance: ${if (diffSets >= 0) "+$diffSets" else "$diffSets"}",
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                }
+                            }
+
+                            // Body
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                    .padding(12.dp)
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Body",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "${last30Stats.pointsScored} : ${last30Stats.pointsConceded}",
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    val diffPts = last30Stats.pointsScored - last30Stats.pointsConceded
+                                    Text(
+                                        text = "Skóre bodů: ${if (diffPts >= 0) "+$diffPts" else "$diffPts"}",
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 

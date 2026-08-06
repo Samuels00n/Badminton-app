@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -567,27 +568,27 @@ fun GoogleSyncDialog(
                     }
 
                     Text(
-                        text = "Zadejte stejný kód na ostatních mobilních telefonech. Všichni uživatelé se stejným kódem uvidí aktuální výsledky zápasů a statistiky.",
+                        text = "⚡ Veškeré změny (přidání hráče, zapsání zápasu) se ukládají a synchronizují automaticky v reálném čase. Zadejte stejný kód na více zařízeních pro sdílení dat v klubu.",
                         fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
+                        lineHeight = 16.sp
                     )
 
-                    Button(
+                    OutlinedButton(
                         onClick = onSyncNow,
-                        colors = ButtonDefaults.buttonColors(containerColor = OliveAccent),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(
                             imageVector = Icons.Default.Sync,
                             contentDescription = null,
-                            tint = Color(0xFF1A1C19)
+                            modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Synchronizovat data nyní",
-                            color = Color(0xFF1A1C19),
-                            fontWeight = FontWeight.Bold
+                            text = "Ruční re-synchronizace",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp
                         )
                     }
                 }

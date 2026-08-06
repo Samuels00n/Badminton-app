@@ -39,6 +39,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -198,15 +199,15 @@ private fun PlayerCardItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, NaturalCardBorder, RoundedCornerShape(20.dp))
+            .border(1.dp, NaturalCardBorder, RoundedCornerShape(16.dp))
             .testTag("player_card_${player.id}"),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -218,32 +219,34 @@ private fun PlayerCardItem(
                     name = player.name,
                     colorHex = player.colorHex,
                     avatarIcon = player.avatarIcon,
-                    size = 48.dp
+                    size = 38.dp
                 )
 
-                Spacer(modifier = Modifier.width(14.dp))
+                Spacer(modifier = Modifier.width(12.dp))
 
                 Column {
                     Text(
                         text = player.name,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
+                        fontSize = 15.sp,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Spacer(modifier = Modifier.height(3.dp))
+
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(ForestGreenContainer)
-                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
                                 text = player.skillLevel,
-                                fontSize = 11.sp,
+                                fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = ForestGreenPrimary
                             )
@@ -252,20 +255,25 @@ private fun PlayerCardItem(
                         Text(
                             text = "${player.hand} • ${player.style}",
                             fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
                         )
                     }
 
                     if (player.notes.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(3.dp))
-                        Text(
-                            text = "Popis: ${player.notes}",
-                            fontSize = 11.sp,
-                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                            maxLines = 2,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                text = player.notes,
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                                maxLines = 2,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -273,23 +281,29 @@ private fun PlayerCardItem(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
                     onClick = onEdit,
-                    modifier = Modifier.testTag("edit_player_btn_${player.id}")
+                    modifier = Modifier
+                        .size(36.dp)
+                        .testTag("edit_player_btn_${player.id}")
                 ) {
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "Upravit hráče",
-                        tint = ForestGreenPrimary
+                        tint = ForestGreenPrimary,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
 
                 IconButton(
                     onClick = onDelete,
-                    modifier = Modifier.testTag("delete_player_btn_${player.id}")
+                    modifier = Modifier
+                        .size(36.dp)
+                        .testTag("delete_player_btn_${player.id}")
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Smazat hráče",
-                        tint = CoralRedLoss.copy(alpha = 0.8f)
+                        tint = CoralRedLoss.copy(alpha = 0.8f),
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
@@ -524,11 +538,18 @@ private fun AddPlayerDialog(
                         onConfirm(name, hand, style, skill, selectedColorHex, notes, selectedAvatarIcon)
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = ForestGreenPrimary),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = ForestGreenPrimary,
+                    contentColor = Color.White
+                ),
                 enabled = name.isNotBlank(),
                 modifier = Modifier.testTag("save_new_player_btn")
             ) {
-                Text(if (initialPlayer == null) "Uložit hráče" else "Uložit změny")
+                Text(
+                    text = if (initialPlayer == null) "Uložit hráče" else "Uložit změny",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
             }
         },
         dismissButton = {

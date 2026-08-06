@@ -339,7 +339,7 @@ fun MatchCard(
                 Spacer(modifier = Modifier.width(8.dp))
 
                 Text(
-                    text = "${match.durationMinutes} min • ${match.courtType}",
+                    text = match.courtType,
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )

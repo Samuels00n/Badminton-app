@@ -28,7 +28,7 @@ data class GoogleAccountState(
     val syncRoomId: String = "BADMINTON-KLUB-2026",
     val lastSyncTimestamp: Long? = null,
     val isSyncing: Boolean = false,
-    val syncStatusMessage: String = "Připraveno k synchronizaci"
+    val syncStatusMessage: String = "Automatické ukládání aktivní"
 )
 
 data class PlayerStats(
@@ -129,6 +129,7 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
     fun deleteAllData() {
         viewModelScope.launch {
             repository.deleteAllData()
+            triggerCloudSync()
         }
     }
 
@@ -235,30 +236,35 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                     avatarIcon = avatarIcon
                 )
             )
+            triggerCloudSync()
         }
     }
 
     fun deletePlayer(player: PlayerEntity) {
         viewModelScope.launch {
             repository.deletePlayer(player)
+            triggerCloudSync()
         }
     }
 
     fun updatePlayer(player: PlayerEntity) {
         viewModelScope.launch {
             repository.updatePlayer(player)
+            triggerCloudSync()
         }
     }
 
     fun addMatch(match: MatchEntity) {
         viewModelScope.launch {
             repository.insertMatch(match)
+            triggerCloudSync()
         }
     }
 
     fun deleteMatch(match: MatchEntity) {
         viewModelScope.launch {
             repository.deleteMatch(match)
+            triggerCloudSync()
         }
     }
 
@@ -555,6 +561,12 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
             player2Sets = p2Sets,
             matches = h2hMatches.sortedByDescending { it.timestamp }
         )
+    }
+
+    fun calculateLast30DaysStats(player: PlayerEntity, matchOptions: List<MatchEntity>): PlayerStats {
+        val thirtyDaysAgo = System.currentTimeMillis() - (30L * 24 * 60 * 60 * 1000L)
+        val recentMatches = matchOptions.filter { it.timestamp >= thirtyDaysAgo }
+        return calculatePlayerStats(player, recentMatches)
     }
 
     fun calculateMonthlyStatsForPlayer(player: PlayerEntity, matchOptions: List<MatchEntity>): List<MonthlyStat> {
