@@ -19,6 +19,8 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import org.json.JSONArray
+import org.json.JSONObject
 
 data class GoogleAccountState(
     val isSignedIn: Boolean = false,
@@ -239,6 +241,132 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                 lastSyncTimestamp = now,
                 syncStatusMessage = "Všechna data jsou aktuální (${SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(now))})"
             )
+        }
+    }
+
+    fun exportDataJson(onResult: (String) -> Unit) {
+        viewModelScope.launch {
+            val currentPlayers = players.value
+            val currentMatches = matches.value
+            
+            val rootJson = JSONObject()
+            rootJson.put("version", 1)
+            rootJson.put("groupCode", _googleAccount.value.syncRoomId)
+            rootJson.put("exportedAt", System.currentTimeMillis())
+            
+            val playersArray = JSONArray()
+            currentPlayers.forEach { p ->
+                val pObj = JSONObject()
+                pObj.put("id", p.id)
+                pObj.put("name", p.name)
+                pObj.put("hand", p.hand)
+                pObj.put("style", p.style)
+                pObj.put("skillLevel", p.skillLevel)
+                pObj.put("colorHex", p.colorHex)
+                pObj.put("notes", p.notes)
+                pObj.put("avatarIcon", p.avatarIcon)
+                playersArray.put(pObj)
+            }
+            rootJson.put("players", playersArray)
+
+            val matchesArray = JSONArray()
+            currentMatches.forEach { m ->
+                val mObj = JSONObject()
+                mObj.put("id", m.id)
+                mObj.put("matchType", m.matchType)
+                mObj.put("category", m.category)
+                mObj.put("player1Id", m.player1Id)
+                mObj.put("player2Id", m.player2Id)
+                mObj.put("player3Id", m.player3Id ?: JSONObject.NULL)
+                mObj.put("player4Id", m.player4Id ?: JSONObject.NULL)
+                mObj.put("setsWinner", m.setsWinner)
+                mObj.put("scoreSetsPlayer1", m.scoreSetsPlayer1)
+                mObj.put("scoreSetsPlayer2", m.scoreSetsPlayer2)
+                mObj.put("set1Player1", m.set1Player1)
+                mObj.put("set1Player2", m.set1Player2)
+                mObj.put("set2Player1", m.set2Player1 ?: JSONObject.NULL)
+                mObj.put("set2Player2", m.set2Player2 ?: JSONObject.NULL)
+                mObj.put("set3Player1", m.set3Player1 ?: JSONObject.NULL)
+                mObj.put("set3Player2", m.set3Player2 ?: JSONObject.NULL)
+                mObj.put("courtType", m.courtType)
+                mObj.put("durationMinutes", m.durationMinutes)
+                mObj.put("notes", m.notes)
+                mObj.put("setsSequence", m.setsSequence)
+                mObj.put("timestamp", m.timestamp)
+                matchesArray.put(mObj)
+            }
+            rootJson.put("matches", matchesArray)
+
+            onResult(rootJson.toString(2))
+        }
+    }
+
+    fun importDataJson(jsonString: String, onComplete: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val rootJson = JSONObject(jsonString)
+                val playersArray = rootJson.optJSONArray("players") ?: JSONArray()
+                val matchesArray = rootJson.optJSONArray("matches") ?: JSONArray()
+
+                var importedPlayers = 0
+                var importedMatches = 0
+
+                for (i in 0 until playersArray.length()) {
+                    val pObj = playersArray.getJSONObject(i)
+                    val p = PlayerEntity(
+                        id = pObj.optLong("id", 0L),
+                        name = pObj.getString("name"),
+                        hand = pObj.optString("hand", "Pravák"),
+                        style = pObj.optString("style", "Univerzál"),
+                        skillLevel = pObj.optString("skillLevel", "Pokročilý"),
+                        colorHex = pObj.optString("colorHex", "#2E7D32"),
+                        notes = pObj.optString("notes", ""),
+                        avatarIcon = pObj.optString("avatarIcon", "🏸")
+                    )
+                    repository.insertPlayer(p)
+                    importedPlayers++
+                }
+
+                for (i in 0 until matchesArray.length()) {
+                    val mObj = matchesArray.getJSONObject(i)
+                    val p3 = if (mObj.isNull("player3Id")) null else mObj.optLong("player3Id")
+                    val p4 = if (mObj.isNull("player4Id")) null else mObj.optLong("player4Id")
+                    val s2p1 = if (mObj.isNull("set2Player1")) null else mObj.optInt("set2Player1")
+                    val s2p2 = if (mObj.isNull("set2Player2")) null else mObj.optInt("set2Player2")
+                    val s3p1 = if (mObj.isNull("set3Player1")) null else mObj.optInt("set3Player1")
+                    val s3p2 = if (mObj.isNull("set3Player2")) null else mObj.optInt("set3Player2")
+                    val m = MatchEntity(
+                        id = mObj.optLong("id", 0L),
+                        matchType = mObj.optString("matchType", "SINGLES"),
+                        category = mObj.optString("category", "Přátelský"),
+                        player1Id = mObj.getLong("player1Id"),
+                        player2Id = mObj.getLong("player2Id"),
+                        player3Id = p3,
+                        player4Id = p4,
+                        setsWinner = mObj.optInt("setsWinner", 1),
+                        scoreSetsPlayer1 = mObj.optInt("scoreSetsPlayer1", 0),
+                        scoreSetsPlayer2 = mObj.optInt("scoreSetsPlayer2", 0),
+                        set1Player1 = mObj.optInt("set1Player1", 0),
+                        set1Player2 = mObj.optInt("set1Player2", 0),
+                        set2Player1 = s2p1,
+                        set2Player2 = s2p2,
+                        set3Player1 = s3p1,
+                        set3Player2 = s3p2,
+                        courtType = mObj.optString("courtType", "Hala"),
+                        durationMinutes = mObj.optInt("durationMinutes", 30),
+                        notes = mObj.optString("notes", ""),
+                        setsSequence = mObj.optString("setsSequence", ""),
+                        timestamp = mObj.optLong("timestamp", System.currentTimeMillis())
+                    )
+                    repository.insertMatch(m)
+                    importedMatches++
+                }
+
+                triggerCloudSync()
+                onComplete(true, "Úspěšně importováno $importedPlayers hráčů a $importedMatches zápasů!")
+            } catch (e: Exception) {
+                onComplete(false, "Chyba při zpracování zálohy: ${e.localizedMessage}")
+            }
         }
     }
 

@@ -28,12 +28,17 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -152,7 +157,9 @@ fun MainAppContent(viewModel: BadmintonViewModel) {
             onSignIn = { email, groupCode -> viewModel.signInWithGoogle(email, groupCode) },
             onSignOut = { viewModel.signOutGoogle() },
             onUpdateRoom = { room -> viewModel.setSyncRoomId(room) },
-            onSyncNow = { viewModel.triggerCloudSync() }
+            onSyncNow = { viewModel.triggerCloudSync() },
+            onExportData = { onResult -> viewModel.exportDataJson(onResult) },
+            onImportData = { json, onComplete -> viewModel.importDataJson(json, onComplete) }
         )
     }
 
@@ -402,12 +409,20 @@ fun GoogleSyncDialog(
     onSignIn: (email: String, groupCode: String) -> Unit,
     onSignOut: () -> Unit,
     onUpdateRoom: (String) -> Unit,
-    onSyncNow: () -> Unit
+    onSyncNow: () -> Unit,
+    onExportData: ((String) -> Unit) -> Unit,
+    onImportData: (String, (Boolean, String) -> Unit) -> Unit
 ) {
     val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
     var roomInput by remember { mutableStateOf(accountState.syncRoomId) }
     var emailInput by remember { mutableStateOf(accountState.email ?: "") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var statusMessage by remember { mutableStateOf<String?>(null) }
+    var showImportDialog by remember { mutableStateOf(false) }
+    var importJsonText by remember { mutableStateOf("") }
+    var showExportDialog by remember { mutableStateOf(false) }
+    var exportedJsonText by remember { mutableStateOf("") }
 
     val accountPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -551,6 +566,7 @@ fun GoogleSyncDialog(
                                 }
                                 else -> {
                                     onSignIn(emailInput.trim(), roomInput.trim())
+                                    onDismiss()
                                 }
                             }
                         },
@@ -663,11 +679,56 @@ fun GoogleSyncDialog(
                     }
 
                     Text(
-                        text = "⚡ Veškeré změny (přidání hráče, zapsání zápasu) se ukládají a synchronizují automaticky v reálném čase. Zadejte stejný kód na více zařízeních pro sdílení dat v klubu.",
+                        text = "ℹ️ Poznámka k synchronizaci: Aplikace používá lokální SQLite/Room databázi. Pro ruční přenos dat mezi různými telefony v rámci klubu můžete použít Export & Import zálohy níže.",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
                         lineHeight = 16.sp
                     )
+
+                    if (statusMessage != null) {
+                        Text(
+                            text = statusMessage ?: "",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ForestGreenPrimary,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(ForestGreenPrimary.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                                .padding(8.dp)
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                onExportData { json ->
+                                    exportedJsonText = json
+                                    showExportDialog = true
+                                }
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(imageVector = Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Exportovat", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                showImportDialog = true
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(imageVector = Icons.Default.Upload, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Importovat", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
 
                     OutlinedButton(
                         onClick = onSyncNow,
@@ -681,12 +742,98 @@ fun GoogleSyncDialog(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Ruční re-synchronizace",
+                            text = "Re-synchronizace stávajících dat",
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp
                         )
                     }
                 }
+            }
+
+            // Export Dialog
+            if (showExportDialog) {
+                AlertDialog(
+                    onDismissRequest = { showExportDialog = false },
+                    title = { Text("Záloha databáze (JSON)", fontWeight = FontWeight.Bold, fontSize = 16.sp) },
+                    text = {
+                        Column {
+                            Text("Kód zápasů a hráčů pro zkopírování a předání spoluhráčům:", fontSize = 12.sp)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedTextField(
+                                value = exportedJsonText,
+                                onValueChange = {},
+                                readOnly = true,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(180.dp),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                clipboardManager.setText(AnnotatedString(exportedJsonText))
+                                statusMessage = "Záloha zkopírována do schránky!"
+                                showExportDialog = false
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = ForestGreenPrimary)
+                        ) {
+                            Icon(imageVector = Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Zkopírovat kód")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showExportDialog = false }) {
+                            Text("Zavřít")
+                        }
+                    }
+                )
+            }
+
+            // Import Dialog
+            if (showImportDialog) {
+                AlertDialog(
+                    onDismissRequest = { showImportDialog = false },
+                    title = { Text("Importovat zálohu dat", fontWeight = FontWeight.Bold, fontSize = 16.sp) },
+                    text = {
+                        Column {
+                            Text("Vložte JSON kód zálohy od spoluhráče:", fontSize = 12.sp)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedTextField(
+                                value = importJsonText,
+                                onValueChange = { importJsonText = it },
+                                placeholder = { Text("Vložte JSON kód...") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(180.dp),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                onImportData(importJsonText) { success, msg ->
+                                    statusMessage = msg
+                                    if (success) {
+                                        showImportDialog = false
+                                        importJsonText = ""
+                                    }
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = ForestGreenPrimary)
+                        ) {
+                            Text("Nahrát do databáze")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showImportDialog = false }) {
+                            Text("Zrušit")
+                        }
+                    }
+                )
             }
         },
         confirmButton = {
