@@ -1,9 +1,13 @@
 package com.example
 
+import android.accounts.AccountManager
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,6 +26,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -134,7 +149,7 @@ fun MainAppContent(viewModel: BadmintonViewModel) {
         GoogleSyncDialog(
             accountState = googleAccountState,
             onDismiss = { showGoogleSyncDialog = false },
-            onSignIn = { name, email -> viewModel.signInWithGoogle(name, email) },
+            onSignIn = { email, groupCode -> viewModel.signInWithGoogle(email, groupCode) },
             onSignOut = { viewModel.signOutGoogle() },
             onUpdateRoom = { room -> viewModel.setSyncRoomId(room) },
             onSyncNow = { viewModel.triggerCloudSync() }
@@ -384,14 +399,27 @@ fun NaturalBottomNavigationBar(
 fun GoogleSyncDialog(
     accountState: GoogleAccountState,
     onDismiss: () -> Unit,
-    onSignIn: (name: String, email: String) -> Unit,
+    onSignIn: (email: String, groupCode: String) -> Unit,
     onSignOut: () -> Unit,
     onUpdateRoom: (String) -> Unit,
     onSyncNow: () -> Unit
 ) {
+    val context = LocalContext.current
     var roomInput by remember { mutableStateOf(accountState.syncRoomId) }
-    var nameInput by remember { mutableStateOf(accountState.displayName ?: "Samuel Stříž") }
-    var emailInput by remember { mutableStateOf(accountState.email ?: "strizsamuel@gmail.com") }
+    var emailInput by remember { mutableStateOf(accountState.email ?: "") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val accountPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val accountName = result.data?.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)
+            if (!accountName.isNullOrBlank()) {
+                emailInput = accountName
+                errorMessage = null
+            }
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -427,45 +455,112 @@ fun GoogleSyncDialog(
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
                             Text(
-                                text = "Propojte svůj Google účet",
+                                text = "Autorizace Google Účtu (OAuth 2.0)",
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 fontSize = 14.sp
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Přihlášením propojíte aplikaci s ostatními mobilními telefony a sdíleným cloudem.",
+                                text = "Pro synchronizaci si vyberte Google účet registrovaný v systému Android a zadejte kód sdílené skupiny. Heslo se z bezpečnostních důvodů zadává pouze v oficiálním dialogu Google/Androidu.",
                                 fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f),
+                                lineHeight = 16.sp
                             )
                         }
                     }
 
-                    OutlinedTextField(
-                        value = nameInput,
-                        onValueChange = { nameInput = it },
-                        label = { Text("Jméno a Příjmení") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    )
+                    OutlinedButton(
+                        onClick = {
+                            try {
+                                val intent = AccountManager.newChooseAccountIntent(
+                                    null, null, arrayOf("com.google"), false, null, null, null, null
+                                )
+                                accountPickerLauncher.launch(intent)
+                            } catch (e: Exception) {
+                                errorMessage = "Výběr účtu z systému Android selhal."
+                            }
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(imageVector = Icons.Default.AccountBox, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Vybrat Google účet ze systému Android", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    }
 
                     OutlinedTextField(
                         value = emailInput,
-                        onValueChange = { emailInput = it },
-                        label = { Text("Google E-mail") },
+                        onValueChange = {
+                            emailInput = it
+                            errorMessage = null
+                        },
+                        label = { Text("Vybraný Google E-mail") },
+                        placeholder = { Text("uzivatel@gmail.com") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     )
 
+                    OutlinedTextField(
+                        value = roomInput,
+                        onValueChange = {
+                            roomInput = it
+                            errorMessage = null
+                        },
+                        label = { Text("Kód sdílené skupiny / klubu") },
+                        placeholder = { Text("např. BADMINTON-2026") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    if (errorMessage != null) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(CoralRedLoss.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                                .padding(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = CoralRedLoss,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = errorMessage ?: "",
+                                color = CoralRedLoss,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
                     Button(
-                        onClick = { onSignIn(nameInput, emailInput) },
+                        onClick = {
+                            when {
+                                !emailInput.contains("@") || !emailInput.contains(".") -> {
+                                    errorMessage = "Zadejte platný Google e-mail."
+                                }
+                                roomInput.trim().isBlank() -> {
+                                    errorMessage = "Zadejte kód sdílené skupiny."
+                                }
+                                else -> {
+                                    onSignIn(emailInput.trim(), roomInput.trim())
+                                }
+                            }
+                        },
                         colors = ButtonDefaults.buttonColors(containerColor = ForestGreenPrimary),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(imageVector = Icons.Default.AccountCircle, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Přihlásit se přes Google účet", fontWeight = FontWeight.Bold)
+                        Text("Přihlásit se přes Google Účet", fontWeight = FontWeight.Bold)
                     }
                 } else {
                     // Profile Info Card

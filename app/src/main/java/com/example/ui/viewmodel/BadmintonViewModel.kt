@@ -142,6 +142,17 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private fun loadInitialGoogleAccountState(): GoogleAccountState {
+        // Clear all pre-saved account details so the user starts strictly signed out
+        if (!prefs.getBoolean("auth_reset_v2", false)) {
+            prefs.edit()
+                .putBoolean("is_signed_in", false)
+                .remove("display_name")
+                .remove("email")
+                .remove("sync_room_id")
+                .putBoolean("auth_reset_v2", true)
+                .apply()
+        }
+
         val isSignedIn = prefs.getBoolean("is_signed_in", false)
         val name = prefs.getString("display_name", null)
         val email = prefs.getString("email", null)
@@ -162,18 +173,22 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
         )
     }
 
-    fun signInWithGoogle(displayName: String, email: String) {
+    fun signInWithGoogle(email: String, groupCode: String) {
+        val displayName = email.substringBefore("@").replace(".", " ").replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
+        val cleanedRoom = groupCode.trim().uppercase(Locale.ROOT)
         prefs.edit()
             .putBoolean("is_signed_in", true)
             .putString("display_name", displayName)
             .putString("email", email)
+            .putString("sync_room_id", cleanedRoom)
             .apply()
 
         _googleAccount.value = _googleAccount.value.copy(
             isSignedIn = true,
             displayName = displayName,
             email = email,
-            syncStatusMessage = "Přihlášeno jako $email"
+            syncRoomId = cleanedRoom,
+            syncStatusMessage = if (cleanedRoom.isNotBlank()) "Přihlášeno jako $email ($cleanedRoom)" else "Přihlášeno jako $email"
         )
 
         triggerCloudSync()
