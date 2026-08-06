@@ -25,7 +25,7 @@ data class GoogleAccountState(
     val displayName: String? = null,
     val email: String? = null,
     val photoUrl: String? = null,
-    val syncRoomId: String = "BADMINTON-KLUB-2026",
+    val syncRoomId: String = "",
     val lastSyncTimestamp: Long? = null,
     val isSyncing: Boolean = false,
     val syncStatusMessage: String = "Automatické ukládání aktivní"
@@ -124,6 +124,14 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                 started = SharingStarted.WhileSubscribed(5000),
                 initialValue = emptyList()
             )
+
+        // Clear all players as requested
+        viewModelScope.launch {
+            if (!prefs.getBoolean("cleared_all_players_v2", false)) {
+                repository.deleteAllData()
+                prefs.edit().putBoolean("cleared_all_players_v2", true).apply()
+            }
+        }
     }
 
     fun deleteAllData() {
@@ -137,7 +145,11 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
         val isSignedIn = prefs.getBoolean("is_signed_in", false)
         val name = prefs.getString("display_name", null)
         val email = prefs.getString("email", null)
-        val roomId = prefs.getString("sync_room_id", "BADMINTON-KLUB-2026") ?: "BADMINTON-KLUB-2026"
+        var roomId = prefs.getString("sync_room_id", "") ?: ""
+        if (roomId == "BADMINTON-KLUB-2026") {
+            roomId = ""
+            prefs.edit().remove("sync_room_id").apply()
+        }
         val lastSync = prefs.getLong("last_sync_timestamp", 0L).let { if (it > 0) it else null }
 
         return GoogleAccountState(
@@ -146,7 +158,7 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
             email = email,
             syncRoomId = roomId,
             lastSyncTimestamp = lastSync,
-            syncStatusMessage = if (isSignedIn) "Synchronizováno s Google účtem ($roomId)" else "Nepřihlášeno"
+            syncStatusMessage = if (isSignedIn) (if (roomId.isNotBlank()) "Synchronizováno s Google účtem ($roomId)" else "Synchronizováno s Google účtem") else "Nepřihlášeno"
         )
     }
 

@@ -286,38 +286,21 @@ fun StatsScreen(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.DateRange,
-                                contentDescription = null,
-                                tint = ForestGreenPrimary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Statistiky za minulý měsíc",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(ForestGreenContainer)
-                                .padding(horizontal = 8.dp, vertical = 3.dp)
-                        ) {
-                            Text(
-                                text = "Posledních 30 dní",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = ForestGreenPrimary
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = null,
+                            tint = ForestGreenPrimary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Statistiky za minulý měsíc",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(14.dp))

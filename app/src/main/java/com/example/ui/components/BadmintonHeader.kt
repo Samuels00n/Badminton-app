@@ -128,7 +128,7 @@ fun BadmintonHeader(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Grid of 3 stats with border top
+                // Grid of 2 stats with border top
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -175,27 +175,6 @@ fun BadmintonHeader(
                             Text(
                                 text = "$totalPlayers",
                                 color = Color.White,
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .width(1.dp)
-                                .height(28.dp)
-                                .background(OliveMedium.copy(alpha = 0.4f))
-                        )
-
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "Aktivita",
-                                color = Color(0xFFF1F3E9).copy(alpha = 0.7f),
-                                fontSize = 12.sp
-                            )
-                            Text(
-                                text = "100%",
-                                color = OliveAccent,
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold
                             )

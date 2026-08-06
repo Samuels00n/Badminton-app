@@ -86,49 +86,62 @@ fun DashboardScreen(
         }
 
         // Top Players Leaderboard Mini Preview
-        if (topPlayers.isNotEmpty()) {
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.EmojiEvents,
-                                    contentDescription = null,
-                                    tint = ForestGreenPrimary,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Nejlepší hráči",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.EmojiEvents,
+                                contentDescription = null,
+                                tint = Color(0xFFFFD700),
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Zobrazit statistiky >",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = ForestGreenPrimary,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .clickable { onNavigateToStats() }
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                                    .testTag("nav_to_stats_link")
+                                text = "Nejlepší hráči",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Zobrazit statistiky >",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ForestGreenPrimary,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { onNavigateToStats() }
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                .testTag("nav_to_stats_link")
+                        )
+                    }
 
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (topPlayers.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Zatím nebyly zaznamenány žádné výsledky hráčů.",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                        }
+                    } else {
                         topPlayers.forEachIndexed { index, stat ->
                             val medalColor = when (index) {
                                 0 -> Color(0xFFD4AF37)
