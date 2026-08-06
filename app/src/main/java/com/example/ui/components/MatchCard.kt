@@ -5,6 +5,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,6 +45,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MatchCard(
     match: MatchEntity,
@@ -176,32 +179,22 @@ fun MatchCard(
 
                             Spacer(modifier = Modifier.width(10.dp))
 
-                            Column {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = nameTeam1,
-                                        fontWeight = if (isTeam1Winner) FontWeight.Bold else FontWeight.Medium,
-                                        fontSize = 15.sp,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    if (isTeam1Winner) {
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Icon(
-                                            imageVector = Icons.Default.EmojiEvents,
-                                            contentDescription = "Vítěz",
-                                            tint = Color(0xFFD4AF37),
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = nameTeam1,
+                                    fontWeight = if (isTeam1Winner) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 15.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
                                 if (isTeam1Winner) {
-                                    Text(
-                                        text = "Vítěz",
-                                        fontSize = 11.sp,
-                                        color = ForestGreenPrimary,
-                                        fontWeight = FontWeight.Bold
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.EmojiEvents,
+                                        contentDescription = "Vítěz",
+                                        tint = Color(0xFFD4AF37),
+                                        modifier = Modifier.size(16.dp)
                                     )
                                 }
                             }
@@ -262,32 +255,22 @@ fun MatchCard(
 
                             Spacer(modifier = Modifier.width(10.dp))
 
-                            Column {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = nameTeam2,
-                                        fontWeight = if (isTeam2Winner) FontWeight.Bold else FontWeight.Medium,
-                                        fontSize = 15.sp,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    if (isTeam2Winner) {
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Icon(
-                                            imageVector = Icons.Default.EmojiEvents,
-                                            contentDescription = "Vítěz",
-                                            tint = Color(0xFFD4AF37),
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = nameTeam2,
+                                    fontWeight = if (isTeam2Winner) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 15.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
                                 if (isTeam2Winner) {
-                                    Text(
-                                        text = "Vítěz",
-                                        fontSize = 11.sp,
-                                        color = ForestGreenPrimary,
-                                        fontWeight = FontWeight.Bold
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.EmojiEvents,
+                                        contentDescription = "Vítěz",
+                                        tint = Color(0xFFD4AF37),
+                                        modifier = Modifier.size(16.dp)
                                     )
                                 }
                             }
@@ -319,12 +302,13 @@ fun MatchCard(
                     .fillMaxWidth()
                     .padding(horizontal = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
                 val allSets = match.getAllSetScores()
-                Row(
-                    modifier = Modifier.weight(1f, fill = false),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                FlowRow(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     allSets.forEachIndexed { index, (p1Score, p2Score) ->
                         Text(

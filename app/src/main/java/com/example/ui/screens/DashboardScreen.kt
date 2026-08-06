@@ -117,11 +117,12 @@ fun DashboardScreen(
                             text = "Zobrazit statistiky >",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = ForestGreenPrimary,
+                            color = Color.White,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
+                                .background(ForestGreenPrimary)
                                 .clickable { onNavigateToStats() }
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
                                 .testTag("nav_to_stats_link")
                         )
                     }
@@ -224,11 +225,12 @@ fun DashboardScreen(
                         text = "Všechny zápasy >",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = ForestGreenPrimary,
+                        color = Color.White,
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
+                            .background(ForestGreenPrimary)
                             .clickable { onNavigateToMatches() }
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
                             .testTag("nav_to_matches_link")
                     )
                 }
