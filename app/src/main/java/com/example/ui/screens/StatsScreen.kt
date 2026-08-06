@@ -593,20 +593,6 @@ fun StatsScreen(
                                                     fontWeight = FontWeight.Bold,
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                                                 )
-
-                                                Box(
-                                                    modifier = Modifier
-                                                        .clip(RoundedCornerShape(6.dp))
-                                                        .background(if (activePlayerWon) ForestGreenContainer else Color(0xFFFFEBEE))
-                                                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                                                ) {
-                                                    Text(
-                                                        text = if (activePlayerWon) "Výhra ${activePlayer.name}" else "Výhra ${selectedOpponent?.name}",
-                                                        fontSize = 11.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = if (activePlayerWon) ForestGreenPrimary else CoralRedLoss
-                                                    )
-                                                }
                                             }
 
                                             Spacer(modifier = Modifier.height(8.dp))

@@ -184,7 +184,7 @@ fun MatchCard(
                                         fontSize = 15.sp,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
-                                        color = if (isTeam1Winner) ForestGreenPrimary else MaterialTheme.colorScheme.onSurface
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                     if (isTeam1Winner) {
                                         Spacer(modifier = Modifier.width(6.dp))
@@ -270,7 +270,7 @@ fun MatchCard(
                                         fontSize = 15.sp,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
-                                        color = if (isTeam2Winner) ForestGreenPrimary else MaterialTheme.colorScheme.onSurface
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                     if (isTeam2Winner) {
                                         Spacer(modifier = Modifier.width(6.dp))

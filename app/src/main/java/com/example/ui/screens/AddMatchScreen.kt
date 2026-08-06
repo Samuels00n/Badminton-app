@@ -268,7 +268,7 @@ private fun LiveMatchSetupForm(
                             Text("Povrch", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             Spacer(modifier = Modifier.height(4.dp))
                             SimpleSelect(
-                                options = listOf("Hala", "Hala / Mat", "Venku", "Jiné"),
+                                options = listOf("Hala", "Venku", "Jiné"),
                                 selected = courtType,
                                 onSelect = { courtType = it }
                             )
@@ -350,6 +350,33 @@ private fun ManualMatchForm(
                     Text("Hráč / Tým 2 (Soupeř):", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     Spacer(modifier = Modifier.height(4.dp))
                     PlayerDropdown(players = players.filter { it.id != selectedP1?.id }, selectedPlayer = selectedP2, onSelect = { selectedP2 = it }, label = "Hráč 2")
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Category & Court Selection
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Kategorie", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            SimpleSelect(
+                                options = listOf("Přátelský", "Turnaj", "Liga"),
+                                selected = category,
+                                onSelect = { category = it }
+                            )
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Povrch", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            SimpleSelect(
+                                options = listOf("Hala", "Venku", "Jiné"),
+                                selected = courtType,
+                                onSelect = { courtType = it }
+                            )
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 

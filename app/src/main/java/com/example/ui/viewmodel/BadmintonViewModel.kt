@@ -127,9 +127,9 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
 
         // Clear all players as requested
         viewModelScope.launch {
-            if (!prefs.getBoolean("cleared_all_players_v2", false)) {
+            if (!prefs.getBoolean("cleared_all_players_v3", false)) {
                 repository.deleteAllData()
-                prefs.edit().putBoolean("cleared_all_players_v2", true).apply()
+                prefs.edit().putBoolean("cleared_all_players_v3", true).apply()
             }
         }
     }
