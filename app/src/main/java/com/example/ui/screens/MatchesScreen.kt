@@ -29,8 +29,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.example.data.entity.MatchEntity
 import com.example.data.entity.PlayerEntity
+import com.example.ui.components.EditMatchDialog
 import com.example.ui.components.MatchCard
 import com.example.ui.theme.ForestGreenContainer
 import com.example.ui.theme.ForestGreenPrimary
@@ -42,11 +47,14 @@ fun MatchesScreen(
     players: List<PlayerEntity>,
     selectedCategory: String?,
     onCategorySelected: (String?) -> Unit,
+    onUpdateMatch: (MatchEntity) -> Unit,
     onDeleteMatch: (MatchEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val playersMap = players.associateBy { it.id }
     val categories = listOf("Vše", "Přátelský", "Turnaj", "Liga")
+
+    var matchToEdit by remember { mutableStateOf<MatchEntity?>(null) }
 
     val filteredMatches = matches.filter { m ->
         if (selectedCategory.isNullOrBlank() || selectedCategory == "Vše") true
@@ -124,6 +132,7 @@ fun MatchesScreen(
                     MatchCard(
                         match = match,
                         playersMap = playersMap,
+                        onEditClick = { matchToEdit = match },
                         onDeleteClick = { onDeleteMatch(match) }
                     )
                 }
@@ -132,6 +141,18 @@ fun MatchesScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
+        }
+
+        matchToEdit?.let { match ->
+            EditMatchDialog(
+                match = match,
+                players = players,
+                onSave = { updatedMatch ->
+                    onUpdateMatch(updatedMatch)
+                    matchToEdit = null
+                },
+                onDismiss = { matchToEdit = null }
+            )
         }
     }
 }

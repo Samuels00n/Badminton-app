@@ -50,7 +50,11 @@ import com.example.ui.theme.ForestGreenContainer
 import com.example.ui.theme.ForestGreenPrimary
 import com.example.ui.theme.NaturalCardBorder
 import com.example.ui.theme.OliveAccent
-import com.example.ui.viewmodel.GoogleAccountState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.example.ui.components.EditMatchDialog
 import com.example.ui.viewmodel.PlayerStats
 
 @Composable
@@ -58,18 +62,20 @@ fun DashboardScreen(
     players: List<PlayerEntity>,
     matches: List<MatchEntity>,
     playerStatsList: List<PlayerStats>,
-    googleAccountState: GoogleAccountState,
+    googleAccountState: com.example.ui.viewmodel.GoogleAccountState,
     onOpenGoogleSync: () -> Unit,
     onNavigateToAddMatch: () -> Unit,
     onNavigateToPlayers: () -> Unit,
     onNavigateToStats: () -> Unit,
     onNavigateToMatches: () -> Unit,
+    onUpdateMatch: (MatchEntity) -> Unit,
     onDeleteMatch: (MatchEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val playersMap = players.associateBy { it.id }
     val recentMatches = matches.sortedByDescending { it.timestamp }.take(4)
     val topPlayers = playerStatsList.sortedByDescending { it.winRate }.take(3)
+    var matchToEdit by remember { mutableStateOf<MatchEntity?>(null) }
 
     LazyColumn(
         modifier = modifier
@@ -296,6 +302,7 @@ fun DashboardScreen(
                 MatchCard(
                     match = match,
                     playersMap = playersMap,
+                    onEditClick = { matchToEdit = match },
                     onDeleteClick = { onDeleteMatch(match) }
                 )
             }
@@ -304,5 +311,17 @@ fun DashboardScreen(
         item {
             Spacer(modifier = Modifier.height(32.dp))
         }
+    }
+
+    matchToEdit?.let { match ->
+        EditMatchDialog(
+            match = match,
+            players = players,
+            onSave = { updatedMatch ->
+                onUpdateMatch(updatedMatch)
+                matchToEdit = null
+            },
+            onDismiss = { matchToEdit = null }
+        )
     }
 }

@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -50,6 +51,7 @@ import java.util.Locale
 fun MatchCard(
     match: MatchEntity,
     playersMap: Map<Long, PlayerEntity>,
+    onEditClick: (() -> Unit)? = null,
     onDeleteClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -115,6 +117,23 @@ fun MatchCard(
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     )
+
+                    if (onEditClick != null) {
+                        IconButton(
+                            onClick = onEditClick,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .padding(start = 4.dp)
+                                .testTag("edit_match_btn_${match.id}")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Upravit zápas",
+                                tint = ForestGreenPrimary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
 
                     if (onDeleteClick != null) {
                         IconButton(

@@ -200,6 +200,7 @@ fun MainAppContent(viewModel: BadmintonViewModel) {
                     onNavigateToPlayers = { currentDestination = AppNavDestination.PLAYERS },
                     onNavigateToStats = { currentDestination = AppNavDestination.STATS },
                     onNavigateToMatches = { currentDestination = AppNavDestination.MATCHES },
+                    onUpdateMatch = { viewModel.updateMatch(it) },
                     onDeleteMatch = { viewModel.deleteMatch(it) }
                 )
 
@@ -208,6 +209,7 @@ fun MainAppContent(viewModel: BadmintonViewModel) {
                     players = players,
                     selectedCategory = categoryFilter,
                     onCategorySelected = { viewModel.setCategoryFilter(it) },
+                    onUpdateMatch = { viewModel.updateMatch(it) },
                     onDeleteMatch = { viewModel.deleteMatch(it) }
                 )
 

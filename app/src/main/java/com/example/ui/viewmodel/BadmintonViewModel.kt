@@ -162,6 +162,7 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                 .addSnapshotListener { snapshot, e ->
                     if (e != null || snapshot == null) return@addSnapshotListener
                     viewModelScope.launch {
+                        val remotePlayerIds = snapshot.documents.mapNotNull { it.getLong("id") }.toSet()
                         for (doc in snapshot.documents) {
                             val pId = doc.getLong("id") ?: continue
                             val name = doc.getString("name") ?: continue
@@ -185,6 +186,13 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                                 )
                             )
                         }
+
+                        val localPlayers = players.value
+                        for (localP in localPlayers) {
+                            if (localP.id !in remotePlayerIds) {
+                                repository.deletePlayer(localP)
+                            }
+                        }
                     }
                 }
 
@@ -194,6 +202,7 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                 .addSnapshotListener { snapshot, e ->
                     if (e != null || snapshot == null) return@addSnapshotListener
                     viewModelScope.launch {
+                        val remoteMatchIds = snapshot.documents.mapNotNull { it.getLong("id") }.toSet()
                         for (doc in snapshot.documents) {
                             val mId = doc.getLong("id") ?: continue
                             val matchType = doc.getString("matchType") ?: "SINGLES"
@@ -242,6 +251,13 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                                     timestamp = timestamp
                                 )
                             )
+                        }
+
+                        val localMatches = matches.value
+                        for (localM in localMatches) {
+                            if (localM.id !in remoteMatchIds) {
+                                repository.deleteMatch(localM)
+                            }
                         }
                     }
                 }
@@ -555,46 +571,183 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun addPlayer(name: String, hand: String, style: String, skillLevel: String, colorHex: String, notes: String, avatarIcon: String = "🏸") {
         viewModelScope.launch {
-            repository.insertPlayer(
-                PlayerEntity(
-                    name = name.trim(),
-                    hand = hand,
-                    style = style,
-                    skillLevel = skillLevel,
-                    colorHex = colorHex,
-                    notes = notes.trim(),
-                    avatarIcon = avatarIcon
-                )
+            val player = PlayerEntity(
+                name = name.trim(),
+                hand = hand,
+                style = style,
+                skillLevel = skillLevel,
+                colorHex = colorHex,
+                notes = notes.trim(),
+                avatarIcon = avatarIcon
             )
-            triggerCloudSync()
+            val generatedId = repository.insertPlayer(player)
+            val playerWithId = player.copy(id = generatedId)
+
+            val roomId = _googleAccount.value.syncRoomId
+            if (roomId.isNotBlank()) {
+                try {
+                    val map = mapOf(
+                        "id" to playerWithId.id,
+                        "name" to playerWithId.name,
+                        "hand" to playerWithId.hand,
+                        "style" to playerWithId.style,
+                        "skillLevel" to playerWithId.skillLevel,
+                        "colorHex" to playerWithId.colorHex,
+                        "notes" to playerWithId.notes,
+                        "avatarIcon" to playerWithId.avatarIcon
+                    )
+                    FirebaseFirestore.getInstance()
+                        .collection("groups").document(roomId)
+                        .collection("players").document(playerWithId.id.toString())
+                        .set(map, SetOptions.merge())
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
 
     fun deletePlayer(player: PlayerEntity) {
         viewModelScope.launch {
             repository.deletePlayer(player)
-            triggerCloudSync()
+            val roomId = _googleAccount.value.syncRoomId
+            if (roomId.isNotBlank()) {
+                try {
+                    FirebaseFirestore.getInstance()
+                        .collection("groups").document(roomId)
+                        .collection("players").document(player.id.toString())
+                        .delete()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
 
     fun updatePlayer(player: PlayerEntity) {
         viewModelScope.launch {
             repository.updatePlayer(player)
-            triggerCloudSync()
+            val roomId = _googleAccount.value.syncRoomId
+            if (roomId.isNotBlank()) {
+                try {
+                    val map = mapOf(
+                        "id" to player.id,
+                        "name" to player.name,
+                        "hand" to player.hand,
+                        "style" to player.style,
+                        "skillLevel" to player.skillLevel,
+                        "colorHex" to player.colorHex,
+                        "notes" to player.notes,
+                        "avatarIcon" to player.avatarIcon
+                    )
+                    FirebaseFirestore.getInstance()
+                        .collection("groups").document(roomId)
+                        .collection("players").document(player.id.toString())
+                        .set(map, SetOptions.merge())
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
 
     fun addMatch(match: MatchEntity) {
         viewModelScope.launch {
+            val generatedId = repository.insertMatch(match)
+            val matchWithId = if (match.id == 0L) match.copy(id = generatedId) else match
+            val roomId = _googleAccount.value.syncRoomId
+            if (roomId.isNotBlank()) {
+                try {
+                    val m = matchWithId
+                    val map = mapOf<String, Any?>(
+                        "id" to m.id,
+                        "matchType" to m.matchType,
+                        "category" to m.category,
+                        "player1Id" to m.player1Id,
+                        "player2Id" to m.player2Id,
+                        "player3Id" to m.player3Id,
+                        "player4Id" to m.player4Id,
+                        "setsWinner" to m.setsWinner,
+                        "scoreSetsPlayer1" to m.scoreSetsPlayer1,
+                        "scoreSetsPlayer2" to m.scoreSetsPlayer2,
+                        "set1Player1" to m.set1Player1,
+                        "set1Player2" to m.set1Player2,
+                        "set2Player1" to m.set2Player1,
+                        "set2Player2" to m.set2Player2,
+                        "set3Player1" to m.set3Player1,
+                        "set3Player2" to m.set3Player2,
+                        "courtType" to m.courtType,
+                        "durationMinutes" to m.durationMinutes,
+                        "notes" to m.notes,
+                        "setsSequence" to m.setsSequence,
+                        "timestamp" to m.timestamp
+                    )
+                    FirebaseFirestore.getInstance()
+                        .collection("groups").document(roomId)
+                        .collection("matches").document(m.id.toString())
+                        .set(map, SetOptions.merge())
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
+    fun updateMatch(match: MatchEntity) {
+        viewModelScope.launch {
             repository.insertMatch(match)
-            triggerCloudSync()
+            val roomId = _googleAccount.value.syncRoomId
+            if (roomId.isNotBlank()) {
+                try {
+                    val m = match
+                    val map = mapOf<String, Any?>(
+                        "id" to m.id,
+                        "matchType" to m.matchType,
+                        "category" to m.category,
+                        "player1Id" to m.player1Id,
+                        "player2Id" to m.player2Id,
+                        "player3Id" to m.player3Id,
+                        "player4Id" to m.player4Id,
+                        "setsWinner" to m.setsWinner,
+                        "scoreSetsPlayer1" to m.scoreSetsPlayer1,
+                        "scoreSetsPlayer2" to m.scoreSetsPlayer2,
+                        "set1Player1" to m.set1Player1,
+                        "set1Player2" to m.set1Player2,
+                        "set2Player1" to m.set2Player1,
+                        "set2Player2" to m.set2Player2,
+                        "set3Player1" to m.set3Player1,
+                        "set3Player2" to m.set3Player2,
+                        "courtType" to m.courtType,
+                        "durationMinutes" to m.durationMinutes,
+                        "notes" to m.notes,
+                        "setsSequence" to m.setsSequence,
+                        "timestamp" to m.timestamp
+                    )
+                    FirebaseFirestore.getInstance()
+                        .collection("groups").document(roomId)
+                        .collection("matches").document(m.id.toString())
+                        .set(map, SetOptions.merge())
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
 
     fun deleteMatch(match: MatchEntity) {
         viewModelScope.launch {
             repository.deleteMatch(match)
-            triggerCloudSync()
+            val roomId = _googleAccount.value.syncRoomId
+            if (roomId.isNotBlank()) {
+                try {
+                    FirebaseFirestore.getInstance()
+                        .collection("groups").document(roomId)
+                        .collection("matches").document(match.id.toString())
+                        .delete()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
 
