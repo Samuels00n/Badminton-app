@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -51,6 +52,7 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Share
@@ -292,9 +294,9 @@ fun NaturalTopAppBar(
                         letterSpacing = (-0.5).sp
                     )
                     Text(
-                        text = if (accountState.isSignedIn) "Google Cloud Sync Aktivní" else "Místní databáze",
+                        text = if (accountState.syncRoomId.isNotBlank()) "Skupina: ${accountState.syncRoomId}" else "Místní databáze",
                         fontSize = 11.sp,
-                        color = if (accountState.isSignedIn) ForestGreenPrimary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                        color = if (accountState.syncRoomId.isNotBlank()) ForestGreenPrimary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -304,22 +306,22 @@ fun NaturalTopAppBar(
             Box(
                 modifier = Modifier
                     .clip(CircleShape)
-                    .background(if (accountState.isSignedIn) ForestGreenContainer else NaturalSurfaceVariant)
-                    .border(1.dp, if (accountState.isSignedIn) ForestGreenPrimary else NaturalCardBorder, CircleShape)
+                    .background(if (accountState.syncRoomId.isNotBlank()) ForestGreenContainer else NaturalSurfaceVariant)
+                    .border(1.dp, if (accountState.syncRoomId.isNotBlank()) ForestGreenPrimary else NaturalCardBorder, CircleShape)
                     .clickable { onOpenGoogleSync() }
                     .padding(horizontal = 12.dp, vertical = 6.dp)
                     .testTag("google_sync_top_btn")
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = if (accountState.isSignedIn) Icons.Default.CloudDone else Icons.Default.CloudSync,
+                        imageVector = if (accountState.syncRoomId.isNotBlank()) Icons.Default.CloudDone else Icons.Default.CloudSync,
                         contentDescription = "Google Sync",
                         tint = ForestGreenPrimary,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (accountState.isSignedIn) "Google Účet" else "Přihlásit Google",
+                        text = if (accountState.syncRoomId.isNotBlank()) "Skupina: ${accountState.syncRoomId}" else "Připojit skupinu",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = ForestGreenPrimary
@@ -445,14 +447,14 @@ fun GoogleSyncDialog(
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    imageVector = Icons.Default.CloudSync,
+                    imageVector = Icons.Default.Groups,
                     contentDescription = null,
                     tint = ForestGreenPrimary,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(26.dp)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    text = "Google Účet & Cloud Sync",
+                    text = "Připojit ke skupině",
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 )
@@ -463,60 +465,51 @@ fun GoogleSyncDialog(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                if (!accountState.isSignedIn) {
+                if (!accountState.isSignedIn && accountState.syncRoomId.isBlank()) {
                     Card(
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                    ) {
-                        Column(modifier = Modifier.padding(14.dp)) {
-                            Text(
-                                text = "Autorizace Google Účtu (OAuth 2.0)",
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                fontSize = 14.sp
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Pro synchronizaci si vyberte Google účet registrovaný v systému Android a zadejte kód sdílené skupiny. Heslo se z bezpečnostních důvodů zadává pouze v oficiálním dialogu Google/Androidu.",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f),
-                                lineHeight = 16.sp
-                            )
-                        }
-                    }
-
-                    OutlinedButton(
-                        onClick = {
-                            try {
-                                val intent = AccountManager.newChooseAccountIntent(
-                                    null, null, arrayOf("com.google"), false, null, null, null, null
-                                )
-                                accountPickerLauncher.launch(intent)
-                            } catch (e: Exception) {
-                                errorMessage = "Výběr účtu z systému Android selhal."
-                            }
-                        },
-                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                        ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(imageVector = Icons.Default.AccountBox, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Vybrat Google účet ze systému Android", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(MaterialTheme.colorScheme.primary, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Sync,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "Živá synchronizace skupiny",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Sdílejte hráče a zápasy v reálném čase se všemi členy vaší skupiny.",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f),
+                                    lineHeight = 16.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
                     }
-
-                    OutlinedTextField(
-                        value = emailInput,
-                        onValueChange = {
-                            emailInput = it
-                            errorMessage = null
-                        },
-                        label = { Text("Vybraný Google E-mail") },
-                        placeholder = { Text("uzivatel@gmail.com") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    )
 
                     OutlinedTextField(
                         value = roomInput,
@@ -524,8 +517,22 @@ fun GoogleSyncDialog(
                             roomInput = it
                             errorMessage = null
                         },
-                        label = { Text("Kód sdílené skupiny / klubu") },
+                        label = { Text("Kód sdílené skupiny / klubu *") },
                         placeholder = { Text("např. BADMINTON-2026") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = emailInput,
+                        onValueChange = {
+                            emailInput = it
+                            errorMessage = null
+                        },
+                        label = { Text("Váš e-mail *") },
+                        placeholder = { Text("např. uzivatel@gmail.com") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
@@ -557,26 +564,50 @@ fun GoogleSyncDialog(
 
                     Button(
                         onClick = {
+                            val trimmedRoom = roomInput.trim()
+                            val trimmedEmail = emailInput.trim()
                             when {
-                                !emailInput.contains("@") || !emailInput.contains(".") -> {
-                                    errorMessage = "Zadejte platný Google e-mail."
+                                trimmedRoom.isBlank() -> {
+                                    errorMessage = "Prosím zadejte kód sdílené skupiny."
                                 }
-                                roomInput.trim().isBlank() -> {
-                                    errorMessage = "Zadejte kód sdílené skupiny."
+                                trimmedEmail.isBlank() -> {
+                                    errorMessage = "Prosím zadejte váš e-mail."
+                                }
+                                !trimmedEmail.contains("@") || !trimmedEmail.contains(".") -> {
+                                    errorMessage = "Zadejte platný e-mail (např. uzivatel@gmail.com)."
                                 }
                                 else -> {
-                                    onSignIn(emailInput.trim(), roomInput.trim())
+                                    onSignIn(trimmedEmail, trimmedRoom)
                                     onDismiss()
                                 }
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = ForestGreenPrimary),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = ForestGreenPrimary,
+                            contentColor = Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(
+                            defaultElevation = 2.dp,
+                            pressedElevation = 6.dp
+                        ),
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp)
                     ) {
-                        Icon(imageVector = Icons.Default.AccountCircle, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Přihlásit se přes Google Účet", fontWeight = FontWeight.Bold)
+                        Icon(
+                            imageVector = Icons.Default.CloudSync,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "Připojit ke skupině a synchronizovat",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            fontSize = 14.sp
+                        )
                     }
                 } else {
                     // Profile Info Card

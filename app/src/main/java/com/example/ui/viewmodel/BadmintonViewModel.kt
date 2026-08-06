@@ -21,6 +21,9 @@ import java.util.Date
 import java.util.Locale
 import org.json.JSONArray
 import org.json.JSONObject
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.SetOptions
 
 data class GoogleAccountState(
     val isSignedIn: Boolean = false,
@@ -109,6 +112,9 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
     private val _liveMatch = MutableStateFlow(LiveMatchState())
     val liveMatch = _liveMatch.asStateFlow()
 
+    private var firestorePlayersListener: ListenerRegistration? = null
+    private var firestoreMatchesListener: ListenerRegistration? = null
+
     init {
         val dao = BadmintonDatabase.getDatabase(application).badmintonDao()
         repository = BadmintonRepository(dao)
@@ -133,6 +139,114 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                 repository.deleteAllData()
                 prefs.edit().putBoolean("cleared_all_players_v3", true).apply()
             }
+        }
+
+        val initialAccount = _googleAccount.value
+        if (initialAccount.syncRoomId.isNotBlank()) {
+            setupFirestoreListeners(initialAccount.syncRoomId)
+        }
+    }
+
+    private fun setupFirestoreListeners(roomId: String) {
+        firestorePlayersListener?.remove()
+        firestoreMatchesListener?.remove()
+
+        if (roomId.isBlank()) return
+
+        try {
+            val db = FirebaseFirestore.getInstance()
+
+            firestorePlayersListener = db.collection("groups")
+                .document(roomId)
+                .collection("players")
+                .addSnapshotListener { snapshot, e ->
+                    if (e != null || snapshot == null) return@addSnapshotListener
+                    viewModelScope.launch {
+                        for (doc in snapshot.documents) {
+                            val pId = doc.getLong("id") ?: continue
+                            val name = doc.getString("name") ?: continue
+                            val hand = doc.getString("hand") ?: "Pravák"
+                            val style = doc.getString("style") ?: "Univerzál"
+                            val skillLevel = doc.getString("skillLevel") ?: "Pokročilý"
+                            val colorHex = doc.getString("colorHex") ?: "#2E7D32"
+                            val notes = doc.getString("notes") ?: ""
+                            val avatarIcon = doc.getString("avatarIcon") ?: "🏸"
+
+                            repository.insertPlayer(
+                                PlayerEntity(
+                                    id = pId,
+                                    name = name,
+                                    hand = hand,
+                                    style = style,
+                                    skillLevel = skillLevel,
+                                    colorHex = colorHex,
+                                    notes = notes,
+                                    avatarIcon = avatarIcon
+                                )
+                            )
+                        }
+                    }
+                }
+
+            firestoreMatchesListener = db.collection("groups")
+                .document(roomId)
+                .collection("matches")
+                .addSnapshotListener { snapshot, e ->
+                    if (e != null || snapshot == null) return@addSnapshotListener
+                    viewModelScope.launch {
+                        for (doc in snapshot.documents) {
+                            val mId = doc.getLong("id") ?: continue
+                            val matchType = doc.getString("matchType") ?: "SINGLES"
+                            val category = doc.getString("category") ?: "Přátelský"
+                            val p1Id = doc.getLong("player1Id") ?: continue
+                            val p2Id = doc.getLong("player2Id") ?: continue
+                            val p3Id = doc.getLong("player3Id")
+                            val p4Id = doc.getLong("player4Id")
+                            val setsWinner = doc.getLong("setsWinner")?.toInt() ?: 1
+                            val scoreSetsPlayer1 = doc.getLong("scoreSetsPlayer1")?.toInt() ?: 0
+                            val scoreSetsPlayer2 = doc.getLong("scoreSetsPlayer2")?.toInt() ?: 0
+                            val set1Player1 = doc.getLong("set1Player1")?.toInt() ?: 0
+                            val set1Player2 = doc.getLong("set1Player2")?.toInt() ?: 0
+                            val set2Player1 = doc.getLong("set2Player1")?.toInt()
+                            val set2Player2 = doc.getLong("set2Player2")?.toInt()
+                            val set3Player1 = doc.getLong("set3Player1")?.toInt()
+                            val set3Player2 = doc.getLong("set3Player2")?.toInt()
+                            val courtType = doc.getString("courtType") ?: "Hala"
+                            val durationMinutes = doc.getLong("durationMinutes")?.toInt() ?: 30
+                            val notes = doc.getString("notes") ?: ""
+                            val setsSequence = doc.getString("setsSequence") ?: ""
+                            val timestamp = doc.getLong("timestamp") ?: System.currentTimeMillis()
+
+                            repository.insertMatch(
+                                MatchEntity(
+                                    id = mId,
+                                    matchType = matchType,
+                                    category = category,
+                                    player1Id = p1Id,
+                                    player2Id = p2Id,
+                                    player3Id = p3Id,
+                                    player4Id = p4Id,
+                                    setsWinner = setsWinner,
+                                    scoreSetsPlayer1 = scoreSetsPlayer1,
+                                    scoreSetsPlayer2 = scoreSetsPlayer2,
+                                    set1Player1 = set1Player1,
+                                    set1Player2 = set1Player2,
+                                    set2Player1 = set2Player1,
+                                    set2Player2 = set2Player2,
+                                    set3Player1 = set3Player1,
+                                    set3Player2 = set3Player2,
+                                    courtType = courtType,
+                                    durationMinutes = durationMinutes,
+                                    notes = notes,
+                                    setsSequence = setsSequence,
+                                    timestamp = timestamp
+                                )
+                            )
+                        }
+                    }
+                }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -175,8 +289,13 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
         )
     }
 
-    fun signInWithGoogle(email: String, groupCode: String) {
-        val displayName = email.substringBefore("@").replace(".", " ").replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
+    fun signInWithGoogle(emailInput: String, groupCode: String) {
+        val email = if (emailInput.isBlank()) "uzivatel@skupina" else emailInput.trim()
+        val displayName = if (email.contains("@")) {
+            email.substringBefore("@").replace(".", " ").replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
+        } else {
+            email
+        }
         val cleanedRoom = groupCode.trim().uppercase(Locale.ROOT)
         prefs.edit()
             .putBoolean("is_signed_in", true)
@@ -190,7 +309,7 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
             displayName = displayName,
             email = email,
             syncRoomId = cleanedRoom,
-            syncStatusMessage = if (cleanedRoom.isNotBlank()) "Přihlášeno jako $email ($cleanedRoom)" else "Přihlášeno jako $email"
+            syncStatusMessage = if (cleanedRoom.isNotBlank()) "Připojeno ke skupině $cleanedRoom" else "Připojeno"
         )
 
         triggerCloudSync()
@@ -225,13 +344,69 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun triggerCloudSync() {
+        val roomId = _googleAccount.value.syncRoomId
+        setupFirestoreListeners(roomId)
+
         viewModelScope.launch {
             _googleAccount.value = _googleAccount.value.copy(
                 isSyncing = true,
                 syncStatusMessage = "Probíhá synchronizace dat s cloudem..."
             )
 
-            delay(1200) // Simulate cloud fetch/merge with other users
+            if (roomId.isNotBlank()) {
+                try {
+                    val db = FirebaseFirestore.getInstance()
+                    val playersList = players.value
+                    val matchesList = matches.value
+
+                    for (p in playersList) {
+                        val map = mapOf(
+                            "id" to p.id,
+                            "name" to p.name,
+                            "hand" to p.hand,
+                            "style" to p.style,
+                            "skillLevel" to p.skillLevel,
+                            "colorHex" to p.colorHex,
+                            "notes" to p.notes,
+                            "avatarIcon" to p.avatarIcon
+                        )
+                        db.collection("groups").document(roomId).collection("players")
+                            .document(p.id.toString()).set(map, SetOptions.merge())
+                    }
+
+                    for (m in matchesList) {
+                        val map = mutableMapOf<String, Any?>(
+                            "id" to m.id,
+                            "matchType" to m.matchType,
+                            "category" to m.category,
+                            "player1Id" to m.player1Id,
+                            "player2Id" to m.player2Id,
+                            "player3Id" to m.player3Id,
+                            "player4Id" to m.player4Id,
+                            "setsWinner" to m.setsWinner,
+                            "scoreSetsPlayer1" to m.scoreSetsPlayer1,
+                            "scoreSetsPlayer2" to m.scoreSetsPlayer2,
+                            "set1Player1" to m.set1Player1,
+                            "set1Player2" to m.set1Player2,
+                            "set2Player1" to m.set2Player1,
+                            "set2Player2" to m.set2Player2,
+                            "set3Player1" to m.set3Player1,
+                            "set3Player2" to m.set3Player2,
+                            "courtType" to m.courtType,
+                            "durationMinutes" to m.durationMinutes,
+                            "notes" to m.notes,
+                            "setsSequence" to m.setsSequence,
+                            "timestamp" to m.timestamp
+                        )
+                        db.collection("groups").document(roomId).collection("matches")
+                            .document(m.id.toString()).set(map, SetOptions.merge())
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            } else {
+                delay(800)
+            }
 
             val now = System.currentTimeMillis()
             prefs.edit().putLong("last_sync_timestamp", now).apply()
