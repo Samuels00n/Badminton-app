@@ -124,10 +124,6 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                 started = SharingStarted.WhileSubscribed(5000),
                 initialValue = emptyList()
             )
-
-        viewModelScope.launch {
-            repository.deleteAllData()
-        }
     }
 
     fun deleteAllData() {

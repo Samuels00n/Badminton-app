@@ -61,7 +61,7 @@ fun MatchesScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "Historie Zápasů",
+            text = "Historie zápasů",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground

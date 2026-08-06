@@ -84,7 +84,7 @@ fun PlayersScreen(
         ) {
             Column {
                 Text(
-                    text = "Správa Hráčů",
+                    text = "Správa hráčů",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
@@ -254,11 +254,14 @@ private fun PlayerCardItem(
                     }
 
                     if (player.notes.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(2.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
                         Text(
-                            text = player.notes,
+                            text = "Popis: ${player.notes}",
                             fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                            maxLines = 2,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -316,7 +319,7 @@ private fun AddPlayerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (initialPlayer == null) "Přidat Nového Hráče" else "Upravit Parametry Hráče", fontWeight = FontWeight.Bold) },
+        title = { Text(if (initialPlayer == null) "Přidat nového hráče" else "Upravit parametry hráče", fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 // Live Avatar Preview Header
@@ -329,7 +332,7 @@ private fun AddPlayerDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     PlayerAvatar(
-                        name = if (name.isNotBlank()) name else "Nový Hráč",
+                        name = if (name.isNotBlank()) name else "Nový hráč",
                         colorHex = selectedColorHex,
                         avatarIcon = selectedAvatarIcon,
                         size = 52.dp
@@ -352,79 +355,77 @@ private fun AddPlayerDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Jméno a Příjmení") },
+                    label = { Text("Jméno a příjmení") },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("new_player_name_input")
                 )
 
-                // Avatar Icon Selection
+                // Avatar Icon Selection (Non-scrollable, fits layout smoothly)
                 Text("Profilová fotka / Ikona", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                LazyColumn(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(84.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                        .padding(8.dp)
+                        .padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    item {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.padding(bottom = 6.dp)
-                        ) {
-                            avatarOptions.take(8).forEach { icon ->
-                                val isSelected = selectedAvatarIcon == icon
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(if (isSelected) ForestGreenPrimary else MaterialTheme.colorScheme.surface)
-                                        .border(
-                                            width = if (isSelected) 2.dp else 1.dp,
-                                            color = if (isSelected) Color.Black else NaturalCardBorder,
-                                            shape = RoundedCornerShape(10.dp)
-                                        )
-                                        .clickable { selectedAvatarIcon = icon },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = if (icon == "INITIALS") "ABC" else icon,
-                                        fontSize = if (icon == "INITIALS") 10.sp else 16.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        avatarOptions.take(8).forEach { icon ->
+                            val isSelected = selectedAvatarIcon == icon
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isSelected) ForestGreenPrimary else MaterialTheme.colorScheme.surface)
+                                    .border(
+                                        width = if (isSelected) 2.dp else 1.dp,
+                                        color = if (isSelected) Color.Black else NaturalCardBorder,
+                                        shape = RoundedCornerShape(8.dp)
                                     )
-                                }
+                                    .clickable { selectedAvatarIcon = icon },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = if (icon == "INITIALS") "ABC" else icon,
+                                    fontSize = if (icon == "INITIALS") 9.sp else 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+                                )
                             }
                         }
                     }
-                    item {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            avatarOptions.drop(8).forEach { icon ->
-                                val isSelected = selectedAvatarIcon == icon
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(if (isSelected) ForestGreenPrimary else MaterialTheme.colorScheme.surface)
-                                        .border(
-                                            width = if (isSelected) 2.dp else 1.dp,
-                                            color = if (isSelected) Color.Black else NaturalCardBorder,
-                                            shape = RoundedCornerShape(10.dp)
-                                        )
-                                        .clickable { selectedAvatarIcon = icon },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = if (icon == "INITIALS") "ABC" else icon,
-                                        fontSize = if (icon == "INITIALS") 10.sp else 16.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        avatarOptions.drop(8).forEach { icon ->
+                            val isSelected = selectedAvatarIcon == icon
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isSelected) ForestGreenPrimary else MaterialTheme.colorScheme.surface)
+                                    .border(
+                                        width = if (isSelected) 2.dp else 1.dp,
+                                        color = if (isSelected) Color.Black else NaturalCardBorder,
+                                        shape = RoundedCornerShape(8.dp)
                                     )
-                                }
+                                    .clickable { selectedAvatarIcon = icon },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = if (icon == "INITIALS") "ABC" else icon,
+                                    fontSize = if (icon == "INITIALS") 9.sp else 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+                                )
                             }
                         }
                     }
@@ -482,11 +483,16 @@ private fun AddPlayerDialog(
                     }
                 }
 
+                Text("Popis hráče", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
-                    label = { Text("Poznámky (volitelné)") },
-                    modifier = Modifier.fillMaxWidth()
+                    label = { Text("Pár slov o sobě (oblíbené údery, styl...)") },
+                    minLines = 2,
+                    maxLines = 4,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("player_description_input")
                 )
             }
         },

@@ -184,7 +184,7 @@ fun DashboardScreen(
                     ) {
                         Icon(imageVector = Icons.Default.Add, contentDescription = null)
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Zapsat Zápas", fontWeight = FontWeight.Bold)
+                        Text("Zapsat zápas", fontWeight = FontWeight.Bold)
                     }
 
                     // Add Player Button

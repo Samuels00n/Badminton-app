@@ -82,7 +82,7 @@ fun AddMatchScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "Záznam Badmintonového Zápasu",
+            text = "Záznam badmintonového zápasu",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
@@ -102,13 +102,13 @@ fun AddMatchScreen(
             Tab(
                 selected = selectedTab == 0,
                 onClick = { selectedTab = 0 },
-                text = { Text("Ruční Zadání", fontWeight = FontWeight.Bold) },
+                text = { Text("Ruční zadání", fontWeight = FontWeight.Bold) },
                 modifier = Modifier.testTag("tab_manual_entry")
             )
             Tab(
                 selected = selectedTab == 1,
                 onClick = { selectedTab = 1 },
-                text = { Text("Živé Skóre", fontWeight = FontWeight.Bold) },
+                text = { Text("Živé skóre", fontWeight = FontWeight.Bold) },
                 modifier = Modifier.testTag("tab_live_score")
             )
         }
