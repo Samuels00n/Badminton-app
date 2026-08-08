@@ -351,12 +351,6 @@ fun NaturalTopAppBar(
                         color = MaterialTheme.colorScheme.onBackground,
                         letterSpacing = (-0.5).sp
                     )
-                    Text(
-                        text = if (accountState.syncRoomId.isNotBlank()) "Skupina: ${accountState.syncRoomId}" else "Místní databáze",
-                        fontSize = 11.sp,
-                        color = if (accountState.syncRoomId.isNotBlank()) ForestGreenPrimary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                        fontWeight = FontWeight.Medium
-                    )
                 }
             }
 
