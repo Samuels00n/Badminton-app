@@ -319,10 +319,10 @@ private fun AddPlayerDialog(
     onConfirm: (String, String, String, String, String, String, String) -> Unit
 ) {
     var name by remember { mutableStateOf(initialPlayer?.name ?: "") }
-    var hand by remember { mutableStateOf(initialPlayer?.hand ?: "Pravák") }
+    var hand by remember { mutableStateOf(initialPlayer?.hand?.let { if (it == "Pravák") "Pravá" else if (it == "Levák") "Levá" else it } ?: "Pravá") }
     var style by remember { mutableStateOf(initialPlayer?.style ?: "Útočný") }
     var skill by remember { mutableStateOf(initialPlayer?.skillLevel ?: "Pokročilý") }
-    var selectedColorHex by remember { mutableStateOf(initialPlayer?.colorHex ?: "#386641") }
+    var selectedColorHex by remember { mutableStateOf(initialPlayer?.colorHex ?: "#2E7D32") }
     var selectedAvatarIcon by remember { mutableStateOf(initialPlayer?.avatarIcon ?: "🏸") }
     var notes by remember { mutableStateOf(initialPlayer?.notes ?: "") }
 
@@ -332,9 +332,9 @@ private fun AddPlayerDialog(
         "#D32F2F", // Červená
         "#E65100", // Oranžová
         "#FFFFFF", // Bílá
-        "#212121", // Černá
+        "#000000", // Černá
         "#F57F17", // Zlatá
-        "#C2185B"  // Růžová
+        "#7B1FA2"  // Fialová
     )
 
     val avatarOptions = listOf(
@@ -468,7 +468,7 @@ private fun AddPlayerDialog(
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Ruka", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         SimpleSelectDialog(
-                            options = listOf("Pravák", "Levák"),
+                            options = listOf("Pravá", "Levá"),
                             selected = hand,
                             onSelect = { hand = it }
                         )

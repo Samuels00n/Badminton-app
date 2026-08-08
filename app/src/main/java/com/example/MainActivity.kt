@@ -88,7 +88,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import com.example.ui.components.GroupConnectCard
 import com.example.ui.components.PlayerAvatar
 import com.example.ui.screens.AddMatchScreen
 import com.example.ui.screens.DashboardScreen
@@ -152,43 +156,47 @@ fun MainAppContent(viewModel: BadmintonViewModel) {
         }
     }
 
-    if (showGoogleSyncDialog) {
-        GoogleSyncDialog(
-            accountState = googleAccountState,
-            onDismiss = { showGoogleSyncDialog = false },
-            onSignIn = { email, groupCode -> viewModel.signInWithGoogle(email, groupCode) },
-            onSignOut = { viewModel.signOutGoogle() },
-            onUpdateRoom = { room -> viewModel.setSyncRoomId(room) },
-            onSyncNow = { viewModel.triggerCloudSync() },
-            onExportData = { onResult -> viewModel.exportDataJson(onResult) },
-            onImportData = { json, onComplete -> viewModel.importDataJson(json, onComplete) }
+    if (googleAccountState.syncRoomId.isBlank()) {
+        WelcomeScreen(
+            onConnectGroup = { code ->
+                viewModel.signInWithGoogle("uzivatel@skupina", code)
+            }
         )
-    }
-
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            NaturalTopAppBar(
+    } else {
+        if (showGoogleSyncDialog) {
+            GoogleSyncDialog(
                 accountState = googleAccountState,
-                onOpenGoogleSync = { showGoogleSyncDialog = true }
-            )
-        },
-        bottomBar = {
-            NaturalBottomNavigationBar(
-                currentDestination = currentDestination,
-                onNavigate = { destination ->
-                    currentDestination = destination
-                }
+                onDismiss = { showGoogleSyncDialog = false },
+                onSignIn = { email, groupCode -> viewModel.signInWithGoogle(email, groupCode) },
+                onSignOut = { viewModel.signOutGoogle() },
+                onUpdateRoom = { room -> viewModel.setSyncRoomId(room) }
             )
         }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .background(MaterialTheme.colorScheme.background)
-        ) {
+
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            topBar = {
+                NaturalTopAppBar(
+                    accountState = googleAccountState,
+                    onOpenGoogleSync = { showGoogleSyncDialog = true }
+                )
+            },
+            bottomBar = {
+                NaturalBottomNavigationBar(
+                    currentDestination = currentDestination,
+                    onNavigate = { destination ->
+                        currentDestination = destination
+                    }
+                )
+            }
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
             when (currentDestination) {
                 AppNavDestination.DASHBOARD -> DashboardScreen(
                     players = players,
@@ -196,6 +204,7 @@ fun MainAppContent(viewModel: BadmintonViewModel) {
                     playerStatsList = playerStatsList,
                     googleAccountState = googleAccountState,
                     onOpenGoogleSync = { showGoogleSyncDialog = true },
+                    onConnectGroup = { code -> viewModel.signInWithGoogle("uzivatel@skupina", code) },
                     onNavigateToAddMatch = { currentDestination = AppNavDestination.ADD_MATCH },
                     onNavigateToPlayers = { currentDestination = AppNavDestination.PLAYERS },
                     onNavigateToStats = { currentDestination = AppNavDestination.STATS },
@@ -247,6 +256,53 @@ fun MainAppContent(viewModel: BadmintonViewModel) {
                     onDeletePlayer = { viewModel.deletePlayer(it) }
                 )
             }
+        }
+    }
+}
+}
+
+@Composable
+fun WelcomeScreen(
+    onConnectGroup: (String) -> Unit
+) {
+    var groupCodeInput by remember { mutableStateOf("") }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF0A180E))
+            .padding(20.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text("🏸", fontSize = 32.sp)
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "Badminton Pro",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White
+                )
+            }
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            GroupConnectCard(
+                currentRoomInput = groupCodeInput,
+                onRoomInputChange = { groupCodeInput = it },
+                onConnectGroup = { code -> onConnectGroup(code) },
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
@@ -412,466 +468,98 @@ fun GoogleSyncDialog(
     onDismiss: () -> Unit,
     onSignIn: (email: String, groupCode: String) -> Unit,
     onSignOut: () -> Unit,
-    onUpdateRoom: (String) -> Unit,
-    onSyncNow: () -> Unit,
-    onExportData: ((String) -> Unit) -> Unit,
-    onImportData: (String, (Boolean, String) -> Unit) -> Unit
+    onUpdateRoom: (String) -> Unit
 ) {
-    val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
     var roomInput by remember { mutableStateOf(accountState.syncRoomId) }
-    var emailInput by remember { mutableStateOf(accountState.email ?: "") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var statusMessage by remember { mutableStateOf<String?>(null) }
-    var showImportDialog by remember { mutableStateOf(false) }
-    var importJsonText by remember { mutableStateOf("") }
-    var showExportDialog by remember { mutableStateOf(false) }
-    var exportedJsonText by remember { mutableStateOf("") }
-
-    val accountPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val accountName = result.data?.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)
-            if (!accountName.isNullOrBlank()) {
-                emailInput = accountName
-                errorMessage = null
-            }
-        }
-    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
-        titleContentColor = MaterialTheme.colorScheme.onSurface,
-        textContentColor = MaterialTheme.colorScheme.onSurface,
+        containerColor = Color(0xFF0F1E14),
+        titleContentColor = Color.White,
+        textContentColor = Color.White,
         shape = RoundedCornerShape(24.dp),
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Groups,
-                    contentDescription = null,
-                    tint = ForestGreenPrimary,
-                    modifier = Modifier.size(26.dp)
-                )
-                Spacer(modifier = Modifier.width(10.dp))
-                Text(
-                    text = "Připojit ke skupině",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-            }
-        },
+        title = null,
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                if (!accountState.isSignedIn && accountState.syncRoomId.isBlank()) {
+                if (accountState.syncRoomId.isBlank()) {
+                    GroupConnectCard(
+                        currentRoomInput = roomInput,
+                        onRoomInputChange = { roomInput = it },
+                        onConnectGroup = { code ->
+                            onSignIn("uzivatel@skupina", code)
+                            onDismiss()
+                        }
+                    )
+                } else {
                     Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF142E1D)),
+                        border = BorderStroke(1.dp, ForestGreenPrimary),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(
-                            modifier = Modifier.padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(MaterialTheme.colorScheme.primary, CircleShape),
-                                contentAlignment = Alignment.Center
+                        Column(modifier = Modifier.padding(18.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Sync,
+                                    imageVector = Icons.Default.Groups,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(22.dp)
+                                    tint = ForestGreenPrimary,
+                                    modifier = Modifier.size(24.dp)
                                 )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Živá synchronizace skupiny",
-                                    fontSize = 13.sp,
+                                    text = "Skupina: ${accountState.syncRoomId}",
+                                    fontSize = 17.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = "Sdílejte hráče a zápasy v reálném čase se všemi členy vaší skupiny.",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f),
-                                    lineHeight = 16.sp,
-                                    fontWeight = FontWeight.Medium
+                                    color = ForestGreenPrimary
                                 )
                             }
-                        }
-                    }
 
-                    OutlinedTextField(
-                        value = roomInput,
-                        onValueChange = {
-                            roomInput = it
-                            errorMessage = null
-                        },
-                        label = { Text("Kód sdílené skupiny / klubu *") },
-                        placeholder = { Text("např. BADMINTON-2026") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    )
+                            Spacer(modifier = Modifier.height(12.dp))
 
-                    OutlinedTextField(
-                        value = emailInput,
-                        onValueChange = {
-                            emailInput = it
-                            errorMessage = null
-                        },
-                        label = { Text("Váš e-mail *") },
-                        placeholder = { Text("např. uzivatel@gmail.com") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-
-                    if (errorMessage != null) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(CoralRedLoss.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                                .padding(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = null,
-                                tint = CoralRedLoss,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = errorMessage ?: "",
-                                color = CoralRedLoss,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
+                                text = "Všechny změny se v reálném čase přenášejí do mobilní i webové aplikace.",
+                                fontSize = 12.5.sp,
+                                color = Color.White.copy(alpha = 0.75f),
+                                lineHeight = 17.sp
                             )
-                        }
-                    }
 
-                    Button(
-                        onClick = {
-                            val trimmedRoom = roomInput.trim()
-                            val trimmedEmail = emailInput.trim()
-                            when {
-                                trimmedRoom.isBlank() -> {
-                                    errorMessage = "Prosím zadejte kód sdílené skupiny."
-                                }
-                                trimmedEmail.isBlank() -> {
-                                    errorMessage = "Prosím zadejte váš e-mail."
-                                }
-                                !trimmedEmail.contains("@") || !trimmedEmail.contains(".") -> {
-                                    errorMessage = "Zadejte platný e-mail (např. uzivatel@gmail.com)."
-                                }
-                                else -> {
-                                    onSignIn(trimmedEmail, trimmedRoom)
-                                    onDismiss()
-                                }
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = ForestGreenPrimary,
-                            contentColor = Color.White
-                        ),
-                        elevation = ButtonDefaults.buttonElevation(
-                            defaultElevation = 2.dp,
-                            pressedElevation = 6.dp
-                        ),
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CloudSync,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(22.dp)
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = "Připojit ke skupině a synchronizovat",
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            fontSize = 14.sp
-                        )
-                    }
-                } else {
-                    // Profile Info Card
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            PlayerAvatar(
-                                name = accountState.displayName ?: "Google",
-                                colorHex = "#386641",
-                                size = 44.dp
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = accountState.displayName ?: "Google Uživatel",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 15.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = accountState.email ?: "",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                                )
-                            }
-                            TextButton(onClick = onSignOut) {
-                                Text("Odhlásit", color = CoralRedLoss, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-
-                    // Sync Status Banner
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.primaryContainer)
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (accountState.isSyncing) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.CloudDone,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = accountState.syncStatusMessage,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-
-                    // Shared Sync Code Input
-                    Column {
-                        Text(
-                            text = "Kód sdílené skupiny / klubu:",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            OutlinedTextField(
-                                value = roomInput,
-                                onValueChange = { roomInput = it },
-                                placeholder = { Text("např. BADMINTON-2026") },
-                                modifier = Modifier.weight(1f),
-                                singleLine = true,
-                                shape = RoundedCornerShape(12.dp)
-                            )
+                            Spacer(modifier = Modifier.height(18.dp))
 
                             Button(
-                                onClick = { onUpdateRoom(roomInput) },
-                                colors = ButtonDefaults.buttonColors(containerColor = ForestGreenPrimary),
-                                shape = RoundedCornerShape(12.dp)
+                                onClick = {
+                                    onSignOut()
+                                    onUpdateRoom("")
+                                    onDismiss()
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = CoralRedLoss,
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(44.dp)
                             ) {
-                                Text("Uložit")
+                                Text(
+                                    text = "Odpojit skupinu",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.5.sp
+                                )
                             }
                         }
                     }
-
-                    Text(
-                        text = "ℹ️ Poznámka k synchronizaci: Aplikace používá lokální SQLite/Room databázi. Pro ruční přenos dat mezi různými telefony v rámci klubu můžete použít Export & Import zálohy níže.",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
-                        lineHeight = 16.sp
-                    )
-
-                    if (statusMessage != null) {
-                        Text(
-                            text = statusMessage ?: "",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = ForestGreenPrimary,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(ForestGreenPrimary.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                                .padding(8.dp)
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = {
-                                onExportData { json ->
-                                    exportedJsonText = json
-                                    showExportDialog = true
-                                }
-                            },
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(imageVector = Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Exportovat", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
-
-                        OutlinedButton(
-                            onClick = {
-                                showImportDialog = true
-                            },
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(imageVector = Icons.Default.Upload, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Importovat", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-
-                    OutlinedButton(
-                        onClick = onSyncNow,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Sync,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Re-synchronizace stávajících dat",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
-                        )
-                    }
                 }
-            }
-
-            // Export Dialog
-            if (showExportDialog) {
-                AlertDialog(
-                    onDismissRequest = { showExportDialog = false },
-                    title = { Text("Záloha databáze (JSON)", fontWeight = FontWeight.Bold, fontSize = 16.sp) },
-                    text = {
-                        Column {
-                            Text("Kód zápasů a hráčů pro zkopírování a předání spoluhráčům:", fontSize = 12.sp)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            OutlinedTextField(
-                                value = exportedJsonText,
-                                onValueChange = {},
-                                readOnly = true,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(180.dp),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                        }
-                    },
-                    confirmButton = {
-                        Button(
-                            onClick = {
-                                clipboardManager.setText(AnnotatedString(exportedJsonText))
-                                statusMessage = "Záloha zkopírována do schránky!"
-                                showExportDialog = false
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = ForestGreenPrimary)
-                        ) {
-                            Icon(imageVector = Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Zkopírovat kód")
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showExportDialog = false }) {
-                            Text("Zavřít")
-                        }
-                    }
-                )
-            }
-
-            // Import Dialog
-            if (showImportDialog) {
-                AlertDialog(
-                    onDismissRequest = { showImportDialog = false },
-                    title = { Text("Importovat zálohu dat", fontWeight = FontWeight.Bold, fontSize = 16.sp) },
-                    text = {
-                        Column {
-                            Text("Vložte JSON kód zálohy od spoluhráče:", fontSize = 12.sp)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            OutlinedTextField(
-                                value = importJsonText,
-                                onValueChange = { importJsonText = it },
-                                placeholder = { Text("Vložte JSON kód...") },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(180.dp),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                        }
-                    },
-                    confirmButton = {
-                        Button(
-                            onClick = {
-                                onImportData(importJsonText) { success, msg ->
-                                    statusMessage = msg
-                                    if (success) {
-                                        showImportDialog = false
-                                        importJsonText = ""
-                                    }
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = ForestGreenPrimary)
-                        ) {
-                            Text("Nahrát do databáze")
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showImportDialog = false }) {
-                            Text("Zrušit")
-                        }
-                    }
-                )
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Zavřít", fontWeight = FontWeight.Bold)
+                Text("Zavřít", color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
     )

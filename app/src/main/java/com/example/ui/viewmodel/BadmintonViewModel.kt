@@ -336,19 +336,28 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
             .putBoolean("is_signed_in", false)
             .remove("display_name")
             .remove("email")
+            .remove("sync_room_id")
             .apply()
 
         _googleAccount.value = _googleAccount.value.copy(
             isSignedIn = false,
             displayName = null,
             email = null,
-            syncStatusMessage = "Odhlášeno z Google účtu"
+            syncRoomId = "",
+            syncStatusMessage = "Odpojeno ze skupiny"
         )
     }
 
     fun setSyncRoomId(roomId: String) {
         val cleaned = roomId.trim().uppercase(Locale.ROOT)
-        if (cleaned.isBlank()) return
+        if (cleaned.isBlank()) {
+            prefs.edit().remove("sync_room_id").apply()
+            _googleAccount.value = _googleAccount.value.copy(
+                syncRoomId = "",
+                syncStatusMessage = "Skupina odpojena"
+            )
+            return
+        }
 
         prefs.edit().putString("sync_room_id", cleaned).apply()
         _googleAccount.value = _googleAccount.value.copy(

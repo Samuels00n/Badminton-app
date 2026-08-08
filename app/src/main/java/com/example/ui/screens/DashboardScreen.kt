@@ -55,6 +55,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.example.ui.components.EditMatchDialog
+import com.example.ui.components.GroupConnectCard
 import com.example.ui.viewmodel.PlayerStats
 
 @Composable
@@ -64,6 +65,7 @@ fun DashboardScreen(
     playerStatsList: List<PlayerStats>,
     googleAccountState: com.example.ui.viewmodel.GoogleAccountState,
     onOpenGoogleSync: () -> Unit,
+    onConnectGroup: (String) -> Unit = {},
     onNavigateToAddMatch: () -> Unit,
     onNavigateToPlayers: () -> Unit,
     onNavigateToStats: () -> Unit,
@@ -76,6 +78,7 @@ fun DashboardScreen(
     val recentMatches = matches.sortedByDescending { it.timestamp }.take(4)
     val topPlayers = playerStatsList.sortedByDescending { it.winRate }.take(3)
     var matchToEdit by remember { mutableStateOf<MatchEntity?>(null) }
+    var groupCodeInput by remember { mutableStateOf("") }
 
     LazyColumn(
         modifier = modifier
@@ -101,35 +104,20 @@ fun DashboardScreen(
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.EmojiEvents,
-                                contentDescription = null,
-                                tint = Color(0xFFFFD700),
-                                modifier = Modifier.size(22.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Nejlepší hráči",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
+                        Icon(
+                            imageVector = Icons.Default.EmojiEvents,
+                            contentDescription = null,
+                            tint = Color(0xFFFFD700),
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Zobrazit statistiky >",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(ForestGreenPrimary)
-                                .clickable { onNavigateToStats() }
-                                .padding(horizontal = 10.dp, vertical = 4.dp)
-                                .testTag("nav_to_stats_link")
+                            text = "Nejlepší hráči",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
                         )
                     }
 
@@ -216,7 +204,7 @@ fun DashboardScreen(
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -225,21 +213,6 @@ fun DashboardScreen(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-
-                if (matches.isNotEmpty()) {
-                    Text(
-                        text = "Všechny zápasy >",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(ForestGreenPrimary)
-                            .clickable { onNavigateToMatches() }
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
-                            .testTag("nav_to_matches_link")
-                    )
-                }
             }
         }
 

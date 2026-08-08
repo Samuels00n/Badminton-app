@@ -1,0 +1,2296 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Badminton Pro</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏸</text></svg>">
+  <link rel="shortcut icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏸</text></svg>">
+  
+  <!-- PWA & Mobile Web Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0d1611">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Badminton">
+
+  <!-- Google Fonts & Font Awesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Firebase JS SDK (compat versions) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #0b120d;
+      --bg-card: #142218;
+      --bg-card-hover: #1b2e21;
+      --bg-input: #1b2b1f;
+      --accent-green: #20df68;
+      --accent-green-dark: #12883e;
+      --accent-light: #34ee7b;
+      --text-main: #f0fdf4;
+      --text-muted: #8ca393;
+      --border-color: #213828;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --nav-height: 64px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding-bottom: calc(var(--nav-height) + 20px);
+    }
+
+    /* Top Header */
+    header {
+      background: rgba(11, 18, 13, 0.88);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 1.15rem;
+      color: var(--text-main);
+    }
+
+    .brand-icon {
+      color: var(--accent-green);
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+    }
+
+    .group-badge {
+      background: #142e1d;
+      border: 1px solid var(--accent-green);
+      color: var(--accent-green);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: transform 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .group-badge:hover {
+      background: #1b3d27;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 10px rgba(32, 223, 104, 0.2);
+    }
+
+    .group-badge .dot {
+      width: 7px;
+      height: 7px;
+      background-color: var(--accent-green);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent-green);
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      max-width: 768px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* Auth / Join Screen */
+    #screen-join {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 75vh;
+      text-align: center;
+    }
+
+    .join-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .join-card i.hero-icon {
+      font-size: 2.8rem;
+      color: var(--accent-green);
+      margin-bottom: 16px;
+    }
+
+    .join-card h2 {
+      font-size: 1.4rem;
+      margin-bottom: 8px;
+      font-weight: 800;
+    }
+
+    .join-card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+
+    .input-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 0 2px rgba(32, 223, 104, 0.2);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.92rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.1s ease, background 0.2s ease;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--accent-green);
+      color: #05140a;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-light);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.06);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .btn-icon:hover {
+      color: var(--accent-green);
+      border-color: var(--accent-green);
+    }
+
+    /* Tab Sections */
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title i {
+      color: var(--accent-green);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--accent-green);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 14px;
+      scrollbar-width: none;
+    }
+
+    .filter-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .filter-chip {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .filter-chip.active {
+      background: rgba(32, 223, 104, 0.15);
+      color: var(--accent-green);
+      border-color: var(--accent-green);
+    }
+
+    /* Player List Item */
+    .player-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      margin-bottom: 10px;
+    }
+
+    .player-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background-color: #2E7D32;
+      border: 1.5px solid rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .player-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .player-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .player-notes {
+      font-size: 0.76rem;
+      color: rgba(240, 253, 244, 0.7);
+      background: rgba(255,255,255,0.04);
+      padding: 4px 8px;
+      border-radius: 6px;
+      margin-top: 4px;
+      border-left: 2px solid var(--accent-green);
+    }
+
+    .pill {
+      background: rgba(32, 223, 104, 0.12);
+      color: var(--accent-green);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(32, 223, 104, 0.25);
+    }
+
+    /* Color & Avatar Picker Swatches */
+    .color-swatches {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+
+    .color-swatch {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.15s ease;
+    }
+
+    .color-swatch:hover {
+      transform: scale(1.1);
+    }
+
+    .color-swatch.selected {
+      border-color: #ffffff;
+      box-shadow: 0 0 0 2px var(--accent-green);
+      transform: scale(1.1);
+    }
+
+    .avatar-grid {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+
+    .avatar-option {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .avatar-option:hover {
+      border-color: var(--accent-green);
+    }
+
+    .avatar-option.selected {
+      background: rgba(32, 223, 104, 0.2);
+      border-color: var(--accent-green);
+      box-shadow: 0 0 0 1px var(--accent-green);
+    }
+
+    /* Player Select Preview Box */
+    .player-select-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .player-select-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      border: 1.5px solid rgba(255,255,255,0.2);
+    }
+
+    /* Match Item */
+    .match-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .match-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .match-teams {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+      text-align: center;
+    }
+
+    .team {
+      font-weight: 700;
+      font-size: 0.92rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .team.winner {
+      color: var(--accent-green);
+    }
+
+    .score-badge {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      padding: 6px 16px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 1.15rem;
+      letter-spacing: 1px;
+    }
+
+    .match-sets-detail {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 10px;
+      text-align: center;
+      background: rgba(0,0,0,0.2);
+      padding: 6px;
+      border-radius: 8px;
+    }
+
+    /* Bottom Navigation Bar */
+    nav.bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: var(--nav-height);
+      background: rgba(11, 18, 13, 0.95);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 1000;
+      max-width: 768px;
+      margin: 0 auto;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      flex: 1;
+      padding: 8px 0;
+      transition: color 0.2s ease, transform 0.15s ease;
+    }
+
+    .nav-item i {
+      font-size: 1.2rem;
+    }
+
+    .nav-item svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+    }
+
+    .nav-item.active {
+      color: var(--accent-green);
+    }
+
+    .nav-item.active i, .nav-item.active svg {
+      transform: translateY(-1px);
+    }
+
+    /* Modal / Dialog */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(6px);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 22px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    }
+
+    .modal-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.3rem;
+      cursor: pointer;
+    }
+
+    .actions-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <ellipse cx="9" cy="9" rx="5.5" ry="6.5" transform="rotate(-45 9 9)"/>
+          <line x1="7" y1="7" x2="11" y2="11" stroke-width="1.2" opacity="0.6"/>
+          <line x1="7" y1="11" x2="11" y2="7" stroke-width="1.2" opacity="0.6"/>
+          <line x1="13" y1="13" x2="20" y2="20" stroke-width="2.2"/>
+        </svg>
+      </div>
+      <span>Badminton Pro</span>
+    </div>
+    <div id="top-group-info" style="display: none;">
+      <div class="group-badge" onclick="openGroupSyncModal()" title="Klikněte pro detail skupiny a synchronizace">
+        <span class="dot"></span>
+        <span id="current-room-name">KOČKY</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Screen 0: Join / Create Group Screen -->
+    <div id="screen-join">
+      <div class="join-card">
+        <i class="fa-solid fa-users-gear hero-icon"></i>
+        <h2>Připojit se ke skupině</h2>
+        <p>Zadejte kód skupiny (např. <b>KOČKY</b>) pro přístup k živým výsledkům nebo pro vytvoření nové skupiny.</p>
+
+        <div class="input-group">
+          <label for="room-input">Kód skupiny / klubu:</label>
+          <input type="text" id="room-input" placeholder="např. KOČKY" style="text-transform: uppercase;" autocomplete="off">
+        </div>
+
+        <button class="btn btn-primary" onclick="connectGroup()" style="margin-bottom: 12px;">
+          <i class="fa-solid fa-plug"></i> Připojit / Vytvořit skupinu
+        </button>
+
+        <button class="btn btn-secondary" onclick="generateRandomRoom()">
+          <i class="fa-solid fa-dice"></i> Vygenerovat kód zvířete
+        </button>
+      </div>
+    </div>
+
+    <!-- Screen Container for Logged In User -->
+    <div id="app-view" style="display: none;">
+
+      <!-- Tab 1: Přehled (Dashboard) -->
+      <section id="tab-dashboard" class="tab-content active">
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-number" id="dash-player-count">0</div>
+            <div class="stat-label">Hráčů</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="dash-match-count">0</div>
+            <div class="stat-label">Zápasů</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="dash-today-count">0</div>
+            <div class="stat-label">Dnes</div>
+          </div>
+        </div>
+
+        <!-- Section: Nejlepší hráči -->
+        <div class="card">
+          <div class="card-header" style="justify-content: center; text-align: center;">
+            <div class="card-title" style="text-align: center; width: 100%; font-size: 1.1rem; justify-content: center;"><i class="fa-solid fa-trophy" style="color: #ffd700;"></i> Nejlepší hráči</div>
+          </div>
+          <div id="dash-best-players">
+            <p style="color: var(--text-muted); font-size: 0.88rem; text-align: center; padding: 12px;">Zatím žádné statistiky.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" style="justify-content: center; text-align: center;">
+            <div class="card-title" style="text-align: center; width: 100%; font-size: 1.1rem; justify-content: center;"><i class="fa-solid fa-clock-rotate-left"></i> Poslední odehrané zápasy</div>
+          </div>
+          <div id="dash-recent-matches">
+            <p style="color: var(--text-muted); font-size: 0.88rem; text-align: center; padding: 12px;">Zatím nebyly odehrány žádné zápasy.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab 2: Zápasy (Matches) -->
+      <section id="tab-matches" class="tab-content">
+        <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+          <button class="btn btn-primary" onclick="openAddMatchModal()">
+            <i class="fa-solid fa-circle-plus"></i> Nový zápas
+          </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-bar" style="margin-bottom: 10px;">
+          <div class="filter-chip active" onclick="setMatchFilter('all', this)">Všechny</div>
+          <div class="filter-chip" onclick="setMatchFilter('Přátelský', this)">Přátelský</div>
+          <div class="filter-chip" onclick="setMatchFilter('Turnaj', this)">Turnaj</div>
+          <div class="filter-chip" onclick="setMatchFilter('Liga', this)">Liga</div>
+        </div>
+
+        <!-- Advanced Filters Panel -->
+        <div class="card" style="margin-bottom: 16px; padding: 12px 14px; background: var(--bg-card); border-color: var(--border-color);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+            <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-sliders" style="color: var(--accent-green);"></i> Filtr zápasů
+            </span>
+            <button onclick="resetMatchFilters()" style="background: none; border: none; color: var(--accent-green); font-size: 0.78rem; font-weight: 700; cursor: pointer; padding: 2px 6px; display: flex; align-items: center; gap: 4px;">
+              <i class="fa-solid fa-rotate-left"></i> Obnovit filtry
+            </button>
+          </div>
+
+          <!-- Filters Grid -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+            <div>
+              <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 3px;">Měsíc:</label>
+              <select id="filter-match-month" onchange="renderMatchesList()" style="width: 100%; padding: 8px; border-radius: 10px; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); font-size: 0.82rem; font-weight: 600; outline: none;">
+                <option value="all">Všechny měsíce</option>
+              </select>
+            </div>
+
+            <div>
+              <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 3px;">Hráč:</label>
+              <select id="filter-match-player" onchange="renderMatchesList()" style="width: 100%; padding: 8px; border-radius: 10px; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); font-size: 0.82rem; font-weight: 600; outline: none;">
+                <option value="all">Všichni hráči</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top: 4px;">
+            <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 3px;">Hledat:</label>
+            <input type="text" id="filter-match-search" placeholder="Jméno, místa..." oninput="renderMatchesList()" style="width: 100%; padding: 8px; border-radius: 10px; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); font-size: 0.82rem; outline: none;">
+          </div>
+        </div>
+
+        <div id="matches-list-container">
+          <!-- Matches rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- Tab 3: Statistiky (Stats) -->
+      <section id="tab-stats" class="tab-content">
+        <div id="stats-tab-container">
+          <!-- Dynamically populated by renderStatsScreen() -->
+        </div>
+      </section>
+
+      <!-- Tab 4: Hráči (Players) -->
+      <section id="tab-players" class="tab-content">
+        <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+          <button class="btn btn-primary" onclick="openAddPlayerModal()">
+            <i class="fa-solid fa-user-plus"></i> Přidat hráče
+          </button>
+        </div>
+
+        <div id="players-list-container">
+          <!-- Players rendered dynamically -->
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Bottom Navigation Bar (Tabs: Přehled, Zápasy, Zapsat, Statistiky, Hráči) -->
+  <nav class="bottom-nav" id="bottom-nav" style="display: none;">
+    <button class="nav-item active" onclick="switchTab('dashboard')">
+      <i class="fa-solid fa-house"></i>
+      <span>Přehled</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('matches')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <ellipse cx="9" cy="9" rx="5.5" ry="6.5" transform="rotate(-45 9 9)"/>
+        <line x1="7" y1="7" x2="11" y2="11" stroke-width="1.2" opacity="0.6"/>
+        <line x1="7" y1="11" x2="11" y2="7" stroke-width="1.2" opacity="0.6"/>
+        <line x1="13" y1="13" x2="20" y2="20" stroke-width="2.2"/>
+      </svg>
+      <span>Zápasy</span>
+    </button>
+    <button class="nav-item" onclick="handleZapsatNav()">
+      <i class="fa-solid fa-circle-plus" style="font-size: 1.35rem; color: var(--accent-green);"></i>
+      <span>Zapsat</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('stats')">
+      <i class="fa-solid fa-chart-column"></i>
+      <span>Statistiky</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('players')">
+      <i class="fa-solid fa-users"></i>
+      <span>Hráči</span>
+    </button>
+  </nav>
+
+  <!-- Modal: Add / Edit Player -->
+  <div class="modal-overlay" id="modal-player">
+    <div class="modal">
+      <div class="modal-title">
+        <span id="player-modal-heading">Přidat nového hráče</span>
+        <button class="close-btn" onclick="closeModal('modal-player')">&times;</button>
+      </div>
+
+      <input type="hidden" id="p-doc-id" value="">
+
+      <div class="input-group">
+        <label>Jméno / Přezdívka *:</label>
+        <div style="display: flex; align-items: center; gap: 12px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 12px; padding: 6px 12px;">
+          <div id="p-avatar-preview" class="avatar" style="background-color: #2E7D32; width: 44px; height: 44px; font-size: 1.25rem; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">🏸</div>
+          <input type="text" id="p-name" placeholder="Např. Honza Novák" oninput="updatePlayerModalPreview()" style="border: none; background: transparent; padding: 6px 0; font-size: 1rem; width: 100%; outline: none; color: var(--text-main);">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;" class="input-group">
+        <div>
+          <label>Dominantní ruka:</label>
+          <select id="p-hand">
+            <option value="Pravá">Pravá</option>
+            <option value="Levá">Levá</option>
+          </select>
+        </div>
+        <div>
+          <label>Úroveň:</label>
+          <select id="p-skill">
+            <option value="Začátečník">Začátečník</option>
+            <option value="Pokročilý" selected>Pokročilý</option>
+            <option value="Profík">Profík</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label>Styl hry:</label>
+        <select id="p-style">
+          <option value="Všestranný">Všestranný</option>
+          <option value="Útočný">Útočný</option>
+          <option value="Obranný">Obranný</option>
+          <option value="Taktický">Taktický</option>
+        </select>
+      </div>
+
+      <!-- Icon Background Color Picker -->
+      <div class="input-group">
+        <label>Barva pozadí ikony:</label>
+        <input type="hidden" id="p-color" value="#2E7D32">
+        <div class="color-swatches" id="color-swatches-list">
+          <div class="color-swatch selected" style="background:#2E7D32" onclick="selectPlayerColor('#2E7D32', this)"></div>
+          <div class="color-swatch" style="background:#1976D2" onclick="selectPlayerColor('#1976D2', this)"></div>
+          <div class="color-swatch" style="background:#D32F2F" onclick="selectPlayerColor('#D32F2F', this)"></div>
+          <div class="color-swatch" style="background:#E65100" onclick="selectPlayerColor('#E65100', this)"></div>
+          <div class="color-swatch" style="background:#FFFFFF; border: 1px solid rgba(255,255,255,0.6);" onclick="selectPlayerColor('#FFFFFF', this)"></div>
+          <div class="color-swatch" style="background:#000000; border: 1px solid rgba(255,255,255,0.2);" onclick="selectPlayerColor('#000000', this)"></div>
+          <div class="color-swatch" style="background:#7B1FA2" onclick="selectPlayerColor('#7B1FA2', this)"></div>
+          <div class="color-swatch" style="background:#F57F17" onclick="selectPlayerColor('#F57F17', this)"></div>
+        </div>
+      </div>
+
+      <!-- Avatar Emoji Picker -->
+      <div class="input-group">
+        <label>Ikona avatara:</label>
+        <input type="hidden" id="p-avatar" value="🏸">
+        <div class="avatar-grid" id="avatar-options-list">
+          <div class="avatar-option selected" onclick="selectPlayerAvatar('🏸', this)">🏸</div>
+          <div class="avatar-option" onclick="selectPlayerAvatar('⚡', this)">⚡</div>
+          <div class="avatar-option" onclick="selectPlayerAvatar('🦅', this)">🦅</div>
+          <div class="avatar-option" onclick="selectPlayerAvatar('🏆', this)">🏆</div>
+          <div class="avatar-option" onclick="selectPlayerAvatar('🦁', this)">🦁</div>
+          <div class="avatar-option" onclick="selectPlayerAvatar('🐯', this)">🐯</div>
+          <div class="avatar-option" onclick="selectPlayerAvatar('🚀', this)">🚀</div>
+          <div class="avatar-option" onclick="selectPlayerAvatar('👑', this)">👑</div>
+          <div class="avatar-option" onclick="selectPlayerAvatar('🎯', this)">🎯</div>
+          <div class="avatar-option" onclick="selectPlayerAvatar('🐼', this)">🐼</div>
+          <div class="avatar-option" onclick="selectPlayerAvatar('🦊', this)">🦊</div>
+          <div class="avatar-option" onclick="selectPlayerAvatar('🌟', this)">🌟</div>
+          <div class="avatar-option" onclick="selectPlayerAvatar('🥇', this)">🥇</div>
+          <div class="avatar-option" onclick="selectPlayerAvatar('💥', this)">💥</div>
+          <div class="avatar-option" onclick="selectPlayerAvatar('🛡️', this)">🛡️</div>
+          <div class="avatar-option" onclick="selectPlayerAvatar('Iniciály', this)" style="font-size: 0.75rem; font-weight:700;">ABC</div>
+        </div>
+      </div>
+
+      <!-- Notes / Bio -->
+      <div class="input-group">
+        <label>Popis / Poznámky o sobě:</label>
+        <textarea id="p-notes" rows="2" placeholder="Něco o hráči, oblíbený úder nebo poznámka..."></textarea>
+      </div>
+
+      <div class="actions-row">
+        <button class="btn btn-secondary" onclick="closeModal('modal-player')">Zrušit</button>
+        <button class="btn btn-primary" onclick="savePlayer()">Uložit hráče</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add / Edit Match -->
+  <div class="modal-overlay" id="modal-match">
+    <div class="modal">
+      <div class="modal-title">
+        <span id="match-modal-heading">Zapsat nový zápas</span>
+        <button class="close-btn" onclick="closeModal('modal-match')">&times;</button>
+      </div>
+
+      <input type="hidden" id="m-doc-id" value="">
+
+      <!-- Player 1 Selection with Avatar Preview -->
+      <div class="input-group">
+        <label>Hráč 1 *:</label>
+        <div class="player-select-row">
+          <div class="player-select-avatar" id="m-p1-avatar-preview" style="background-color: #2E7D32;">🏸</div>
+          <select id="m-p1" onchange="onMatchP1Change()"></select>
+        </div>
+      </div>
+
+      <!-- Player 2 Selection with Avatar Preview -->
+      <div class="input-group">
+        <label>Hráč 2 *:</label>
+        <div class="player-select-row">
+          <div class="player-select-avatar" id="m-p2-avatar-preview" style="background-color: #2E7D32;">🏸</div>
+          <select id="m-p2" onchange="onMatchP2Change()"></select>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;" class="input-group">
+        <div>
+          <label>Kategorie:</label>
+          <select id="m-category">
+            <option value="Přátelský">Přátelský</option>
+            <option value="Turnaj">Turnaj</option>
+            <option value="Liga">Liga</option>
+          </select>
+        </div>
+        <div>
+          <label>Povrch / Kurt:</label>
+          <select id="m-court">
+            <option value="Hala">Hala</option>
+            <option value="Venku">Venku</option>
+            <option value="Jiné">Jiné</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Set Score Inputs -->
+      <div class="input-group">
+        <label style="font-weight: 700; color: var(--text-main);">Výsledky jednotlivých setů (body):</label>
+        
+        <div style="display: grid; grid-template-columns: 80px 1fr 20px 1fr; align-items: center; gap: 8px; margin-top: 8px;">
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">1. Set:</span>
+          <input type="number" id="m-set1-p1" value="21" min="0" placeholder="Hráč 1">
+          <span style="font-weight: 800; text-align: center;">:</span>
+          <input type="number" id="m-set1-p2" value="18" min="0" placeholder="Hráč 2">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 80px 1fr 20px 1fr; align-items: center; gap: 8px; margin-top: 8px;">
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">2. Set:</span>
+          <input type="number" id="m-set2-p1" value="21" min="0" placeholder="Hráč 1">
+          <span style="font-weight: 800; text-align: center;">:</span>
+          <input type="number" id="m-set2-p2" value="15" min="0" placeholder="Hráč 2">
+        </div>
+
+        <div id="set3-row" style="display: none; grid-template-columns: 80px 1fr 20px 1fr; align-items: center; gap: 8px; margin-top: 8px;">
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">3. Set:</span>
+          <input type="number" id="m-set3-p1" value="" min="0" placeholder="Hráč 1">
+          <span style="font-weight: 800; text-align: center;">:</span>
+          <input type="number" id="m-set3-p2" value="" min="0" placeholder="Hráč 2">
+        </div>
+
+        <button type="button" class="btn btn-secondary" id="toggle-set3-btn" onclick="toggleSet3()" style="margin-top: 10px; padding: 8px; font-size: 0.8rem;">
+          <i class="fa-solid fa-plus"></i> Přidat 3. set
+        </button>
+      </div>
+
+      <div class="input-group">
+        <label>Poznámka k zápasu:</label>
+        <textarea id="m-notes" rows="2" placeholder="Např. finále klubového večera..."></textarea>
+      </div>
+
+      <div class="actions-row">
+        <button class="btn btn-secondary" onclick="closeModal('modal-match')">Zrušit</button>
+        <button class="btn btn-primary" onclick="saveMatch()">Uložit zápas</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Group Sync Info & Disconnect -->
+  <div class="modal-overlay" id="modal-group-sync" onclick="if(event.target === this) closeModal('modal-group-sync')">
+    <div class="modal" style="max-width: 400px; background: linear-gradient(135deg, #142e1d 0%, #0d1e13 100%); border: 1px solid var(--accent-green);">
+      <div class="modal-title" style="color: var(--accent-green); margin-bottom: 12px;">
+        <span style="display: flex; align-items: center; gap: 8px; font-size: 1.1rem;">
+          <i class="fa-solid fa-tower-cell"></i> Skupina: <span id="sync-modal-group-name">KOČKY</span>
+        </span>
+        <button class="close-btn" onclick="closeModal('modal-group-sync')">&times;</button>
+      </div>
+
+      <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(32, 223, 104, 0.15); border: 1px solid var(--accent-green); color: var(--accent-green); padding: 5px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; margin-bottom: 14px;">
+        <span style="width: 7px; height: 7px; background-color: var(--accent-green); border-radius: 50%; box-shadow: 0 0 8px var(--accent-green);"></span>
+        Živá synchronizace
+      </div>
+
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.45;">
+        Všechny změny se v reálném čase přenášejí do mobilní i webové aplikace.
+      </p>
+
+      <button class="btn btn-danger" onclick="disconnectGroup()" style="padding: 11px; font-size: 0.88rem;">
+        <i class="fa-solid fa-right-from-bracket"></i> Odpojit skupinu
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+      projectId: "badminton-pro-a6c95",
+      authDomain: "badminton-pro-a6c95.firebaseapp.com",
+      storageBucket: "badminton-pro-a6c95.appspot.com"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+
+    let currentRoom = "";
+    let players = [];
+    let matches = [];
+    let playersUnsub = null;
+    let matchesUnsub = null;
+    let activeMatchFilter = "all";
+
+    // Strictly plural Czech animal names with NO digits (100+ entries for rich variety)
+    const animalsList = [
+      "KOČKY", "SLONI", "KOSATKY", "TYGŘI", "ORLI", "DELFÍNI", "PANDY", "VLCI",
+      "LIŠKY", "MEDVĚDI", "SOVY", "GEOPARDI", "ŽABY", "KLOKANI", "VYDRY", "ŽRALOCI",
+      "TUČŇÁCI", "VEVERKY", "LVI", "SOBÍCI", "KAMZÍCI", "SRNCI", "JEZEVCI", "HAVRANI",
+      "TULEŇI", "HROŠI", "NOSOROŽCI", "SÝKORKY", "SOKOLI", "JESTŘÁBI", "PANTEŘI", "JAGUÁŘI",
+      "ŠAKALI", "PUMY", "RYSI", "JELENI", "BOBŘI", "PAPOUŠCI", "KORMORÁNI", "PELIKÁNI",
+      "PLAMEŇÁCI", "JEŽCI", "KRTCI", "VLAŠTOVKY", "KANÁRCI", "SÝKORY", "SVIŠTI", "SURIKATY",
+      "KROKODÝLI", "ALIGÁTOŘI", "LEOPARDI", "KOALY", "KLOKÁNCI", "LEMURI", "HYENY", "ZEBRY",
+      "ŽIRAFY", "CHAMELEÓNI", "MANTY", "GORILY", "ŠIMPANZI", "MANDRILI", "TAPÍŘI", "MRAVENČÍCI",
+      "KONDORI", "KALONI", "ALBATROSY", "TUKANI", "KOLIBŘÍCI", "DANĚCI", "MUFLONI", "NETOPÝŘI",
+      "DELFÍNCI", "MEDVÍDCI", "BOBŘÍCI", "SÝČCI", "VÝŘI", "POŠTOLKY", "KRAKENI", "NORKOVCI",
+      "LOSOSI", "PSTRUZI", "ŠTIKY", "OKOUNI", "SUMCI", "KAPRÍCI", "REJSCI", "KORÁLOVCI",
+      "BISONI", "MAMUTI", "LIPANI", "MĚSÍČNÍCI", "ORLOVCI", "ALPAKY", "LAMY", "CHINCHILY",
+      "LEGUIÁNI", "VARANI", "SALAMANDŘI", "KARETY", "MEDŮZY", "MRAVENCI", "VČELKY", "ČMELÁCI",
+      "MOTÝLI", "CRAKÁČI", "KAVKY", "STEHLÍCI", "SÝKOŘI", "SÝČKOVCI", "ŠPAČCI", "KOSI"
+    ];
+
+    let roomBag = [];
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedRoom = localStorage.getItem('badminton_room');
+      if (savedRoom) {
+        document.getElementById('room-input').value = savedRoom;
+        connectGroup(savedRoom);
+      }
+    });
+
+    function generateRandomRoom() {
+      const currentVal = document.getElementById('room-input') ? document.getElementById('room-input').value.trim().toUpperCase() : "";
+      if (!roomBag || roomBag.length === 0) {
+        let arr = [...animalsList];
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        if (arr[arr.length - 1] === currentVal && arr.length > 1) {
+          const temp = arr[arr.length - 1];
+          arr[arr.length - 1] = arr[0];
+          arr[0] = temp;
+        }
+        roomBag = arr;
+      }
+      const animal = roomBag.pop();
+      document.getElementById('room-input').value = animal;
+    }
+
+    function connectGroup(roomCode) {
+      const input = roomCode || document.getElementById('room-input').value.trim();
+      if (!input) {
+        alert("Zadejte prosím kód skupiny!");
+        return;
+      }
+
+      currentRoom = input.toUpperCase();
+      localStorage.setItem('badminton_room', currentRoom);
+
+      document.getElementById('screen-join').style.display = 'none';
+      document.getElementById('app-view').style.display = 'block';
+      document.getElementById('bottom-nav').style.display = 'flex';
+      document.getElementById('top-group-info').style.display = 'block';
+
+      document.getElementById('current-room-name').innerText = currentRoom;
+      if (document.getElementById('sync-modal-group-name')) {
+        document.getElementById('sync-modal-group-name').innerText = currentRoom;
+      }
+
+      listenToFirestore();
+    }
+
+    function openGroupSyncModal() {
+      if (document.getElementById('sync-modal-group-name')) {
+        document.getElementById('sync-modal-group-name').innerText = currentRoom;
+      }
+      document.getElementById('modal-group-sync').classList.add('active');
+    }
+
+    function disconnectGroup() {
+      if (playersUnsub) playersUnsub();
+      if (matchesUnsub) matchesUnsub();
+
+      closeModal('modal-group-sync');
+
+      currentRoom = "";
+      localStorage.removeItem('badminton_room');
+
+      document.getElementById('screen-join').style.display = 'flex';
+      document.getElementById('app-view').style.display = 'none';
+      document.getElementById('bottom-nav').style.display = 'none';
+      document.getElementById('top-group-info').style.display = 'none';
+    }
+
+    function listenToFirestore() {
+      if (!currentRoom) return;
+
+      playersUnsub = db.collection("groups").doc(currentRoom).collection("players")
+        .onSnapshot(snapshot => {
+          players = [];
+          snapshot.forEach(doc => {
+            players.push({ docId: doc.id, ...doc.data() });
+          });
+          renderAll();
+        }, err => console.error("Players error:", err));
+
+      matchesUnsub = db.collection("groups").doc(currentRoom).collection("matches")
+        .onSnapshot(snapshot => {
+          matches = [];
+          snapshot.forEach(doc => {
+            matches.push({ docId: doc.id, ...doc.data() });
+          });
+          matches.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+          renderAll();
+        }, err => console.error("Matches error:", err));
+    }
+
+    function renderAll() {
+      document.getElementById('dash-player-count').innerText = players.length;
+      document.getElementById('dash-match-count').innerText = matches.length;
+
+      const todayStr = new Date().toDateString();
+      const todayCount = matches.filter(m => new Date(m.timestamp || 0).toDateString() === todayStr).length;
+      document.getElementById('dash-today-count').innerText = todayCount;
+
+      renderDashboardRecentMatches();
+      renderDashboardBestPlayers();
+      renderMatchesList();
+      renderPlayersList();
+      renderStatsScreen();
+    }
+
+    function renderDashboardBestPlayers() {
+      const container = document.getElementById('dash-best-players');
+      if (!container) return;
+
+      if (players.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.88rem; text-align: center; padding: 12px;">Zatím nejsou přidaní žádní hráči.</p>';
+        return;
+      }
+
+      const statsMap = {};
+      players.forEach(p => {
+        statsMap[p.id] = { id: p.id, name: p.name, avatarIcon: p.avatarIcon || '🏸', colorHex: p.colorHex || '#2E7D32', wins: 0, total: 0 };
+      });
+
+      matches.forEach(m => {
+        const p1 = m.player1Id;
+        const p2 = m.player2Id;
+        const w1 = (m.scoreSetsPlayer1 || 0) > (m.scoreSetsPlayer2 || 0);
+
+        if (statsMap[p1]) {
+          statsMap[p1].total++;
+          if (w1) statsMap[p1].wins++;
+        }
+        if (statsMap[p2]) {
+          statsMap[p2].total++;
+          if (!w1) statsMap[p2].wins++;
+        }
+      });
+
+      const playerList = Object.values(statsMap).map(p => {
+        const winRate = p.total > 0 ? (p.wins / p.total) * 100 : 0;
+        return { ...p, winRate };
+      });
+
+      playerList.sort((a, b) => {
+        if (b.winRate !== a.winRate) return b.winRate - a.winRate;
+        return b.wins - a.wins;
+      });
+
+      const topPlayers = playerList.slice(0, 5);
+
+      container.innerHTML = topPlayers.map((p, idx) => {
+        const pctFormatted = p.total > 0 ? p.winRate.toFixed(1) + ' %' : '0 %';
+        const barWidth = p.total > 0 ? Math.round(p.winRate) : 0;
+        const avatarSymbol = (p.avatarIcon === 'Iniciály' || !p.avatarIcon) ? p.name.substring(0, 2).toUpperCase() : p.avatarIcon;
+
+        return `
+          <div class="player-item" style="flex-direction: column; align-items: stretch; gap: 8px; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div class="player-info">
+                <span style="font-weight: 800; color: var(--accent-green); width: 22px; text-align: center;">#${idx + 1}</span>
+                <div class="avatar" style="background-color: ${p.colorHex}; width: 36px; height: 36px; font-size: 1.1rem;">${avatarSymbol}</div>
+                <div>
+                  <div class="player-name">${p.name}</div>
+                  <div class="player-sub">${p.wins} výher z ${p.total} ${p.total === 1 ? 'zápasu' : 'zápasů'}</div>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <div class="pill" style="font-size: 0.82rem; padding: 4px 10px;">${pctFormatted}</div>
+              </div>
+            </div>
+            <div style="width: 100%; background: var(--bg-input); height: 6px; border-radius: 4px; overflow: hidden;">
+              <div style="width: ${barWidth}%; background: linear-gradient(90deg, #12883e, #20df68); height: 100%; border-radius: 4px; transition: width 0.3s ease;"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderDashboardRecentMatches() {
+      const container = document.getElementById('dash-recent-matches');
+      if (matches.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.88rem; text-align: center; padding: 12px;">Zatím nebyly odehrány žádné zápasy.</p>';
+        return;
+      }
+
+      const recent = matches.slice(0, 3);
+      container.innerHTML = recent.map(m => createMatchHTML(m, false)).join('');
+    }
+
+    const CZECH_MONTHS = ['Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen', 'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'];
+
+    function populateMatchFilterDropdowns() {
+      const monthSelect = document.getElementById('filter-match-month');
+      const playerSelect = document.getElementById('filter-match-player');
+
+      if (monthSelect) {
+        const currentSelected = monthSelect.value || 'all';
+        const monthMap = {};
+        matches.forEach(m => {
+          if (m.timestamp) {
+            const d = new Date(m.timestamp);
+            if (!isNaN(d.getTime())) {
+              const y = d.getFullYear();
+              const mIdx = d.getMonth();
+              const key = `${y}-${String(mIdx + 1).padStart(2, '0')}`;
+              const label = `${CZECH_MONTHS[mIdx]} ${y}`;
+              monthMap[key] = label;
+            }
+          }
+        });
+
+        const now = new Date();
+        const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        if (!monthMap[nowKey]) {
+          monthMap[nowKey] = `${CZECH_MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+        }
+
+        const sortedKeys = Object.keys(monthMap).sort().reverse();
+
+        monthSelect.innerHTML = '<option value="all">Všechny měsíce</option>' +
+          sortedKeys.map(k => `<option value="${k}">${monthMap[k]}</option>`).join('');
+
+        if (Array.from(monthSelect.options).some(o => o.value === currentSelected)) {
+          monthSelect.value = currentSelected;
+        } else {
+          monthSelect.value = 'all';
+        }
+      }
+
+      if (playerSelect) {
+        const currentSelected = playerSelect.value || 'all';
+        playerSelect.innerHTML = '<option value="all">Všichni hráči</option>' +
+          players.map(p => {
+            const icon = (p.avatarIcon === 'Iniciály' || !p.avatarIcon) ? p.name.substring(0, 2).toUpperCase() : p.avatarIcon;
+            return `<option value="${p.id}">${icon} ${p.name}</option>`;
+          }).join('');
+
+        if (Array.from(playerSelect.options).some(o => o.value === currentSelected)) {
+          playerSelect.value = currentSelected;
+        } else {
+          playerSelect.value = 'all';
+        }
+      }
+    }
+
+    function setMatchFilter(filterCategory, chipEl) {
+      activeMatchFilter = filterCategory;
+      document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active'));
+      if (chipEl) chipEl.classList.add('active');
+      renderMatchesList();
+    }
+
+    function resetMatchFilters() {
+      activeMatchFilter = "all";
+      document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active'));
+      const allChip = document.querySelectorAll('.filter-chip')[0];
+      if (allChip) allChip.classList.add('active');
+
+      if (document.getElementById('filter-match-month')) document.getElementById('filter-match-month').value = 'all';
+      if (document.getElementById('filter-match-player')) document.getElementById('filter-match-player').value = 'all';
+      if (document.getElementById('filter-match-search')) document.getElementById('filter-match-search').value = '';
+
+      renderMatchesList();
+    }
+
+    function renderMatchesList() {
+      populateMatchFilterDropdowns();
+
+      const container = document.getElementById('matches-list-container');
+      if (!container) return;
+
+      const selectedMonth = document.getElementById('filter-match-month')?.value || 'all';
+      const selectedPlayerId = document.getElementById('filter-match-player')?.value || 'all';
+      const searchQuery = (document.getElementById('filter-match-search')?.value || '').toLowerCase().trim();
+
+      let filtered = matches;
+
+      // Category chip filter
+      if (activeMatchFilter !== "all") {
+        filtered = filtered.filter(m => m.category === activeMatchFilter);
+      }
+
+      // Month filter
+      if (selectedMonth !== "all") {
+        filtered = filtered.filter(m => {
+          if (!m.timestamp) return false;
+          const d = new Date(m.timestamp);
+          if (isNaN(d.getTime())) return false;
+          const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          return k === selectedMonth;
+        });
+      }
+
+      // Player filter
+      if (selectedPlayerId !== "all") {
+        filtered = filtered.filter(m => 
+          m.player1Id == selectedPlayerId ||
+          m.player2Id == selectedPlayerId ||
+          m.player3Id == selectedPlayerId ||
+          m.player4Id == selectedPlayerId
+        );
+      }
+
+      // Search query
+      if (searchQuery) {
+        filtered = filtered.filter(m => {
+          const p1Name = getPlayerName(m.player1Id).toLowerCase();
+          const p2Name = getPlayerName(m.player2Id).toLowerCase();
+          const p3Name = m.player3Id ? getPlayerName(m.player3Id).toLowerCase() : "";
+          const p4Name = m.player4Id ? getPlayerName(m.player4Id).toLowerCase() : "";
+          const category = (m.category || '').toLowerCase();
+          const location = (m.courtType || '').toLowerCase();
+          const notes = (m.notes || '').toLowerCase();
+
+          return p1Name.includes(searchQuery) ||
+                 p2Name.includes(searchQuery) ||
+                 p3Name.includes(searchQuery) ||
+                 p4Name.includes(searchQuery) ||
+                 category.includes(searchQuery) ||
+                 location.includes(searchQuery) ||
+                 notes.includes(searchQuery);
+        });
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; text-align: center; margin-top: 8px;">
+            <i class="fa-solid fa-filter-circle-xmark" style="font-size: 2rem; color: var(--text-muted); margin-bottom: 8px;"></i>
+            <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">Žádné zápasy neodpovídají zvoleným filtrům.</p>
+            <button onclick="resetMatchFilters()" class="btn btn-secondary" style="margin-top: 12px; padding: 6px 14px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-rotate-left"></i> Obnovit filtry
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(m => createMatchHTML(m, true)).join('');
+    }
+
+    function renderPlayersList() {
+      const container = document.getElementById('players-list-container');
+      if (players.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 24px;">Žádní hráči v této skupině.</p>';
+        return;
+      }
+      container.innerHTML = players.map(p => createPlayerHTML(p, true)).join('');
+    }
+
+    function getPlayerObj(id) {
+      return players.find(x => x.id == id);
+    }
+
+    function getPlayerName(id) {
+      const p = getPlayerObj(id);
+      return p ? p.name : ("Hráč #" + id);
+    }
+
+    function createMatchHTML(m, allowActions = false) {
+      const p1Obj = getPlayerObj(m.player1Id);
+      const p2Obj = getPlayerObj(m.player2Id);
+
+      const p1Name = p1Obj ? p1Obj.name : getPlayerName(m.player1Id);
+      const p2Name = p2Obj ? p2Obj.name : getPlayerName(m.player2Id);
+
+      const p1Icon = p1Obj ? ((p1Obj.avatarIcon === 'Iniciály' || !p1Obj.avatarIcon) ? p1Obj.name.substring(0, 2).toUpperCase() : p1Obj.avatarIcon) : '🏸';
+      const p2Icon = p2Obj ? ((p2Obj.avatarIcon === 'Iniciály' || !p2Obj.avatarIcon) ? p2Obj.name.substring(0, 2).toUpperCase() : p2Obj.avatarIcon) : '🏸';
+
+      const p1Color = p1Obj ? (p1Obj.colorHex || '#2E7D32') : '#2E7D32';
+      const p2Color = p2Obj ? (p2Obj.colorHex || '#2E7D32') : '#2E7D32';
+
+      const winner1 = (m.scoreSetsPlayer1 || 0) > (m.scoreSetsPlayer2 || 0);
+      const winner2 = (m.scoreSetsPlayer2 || 0) > (m.scoreSetsPlayer1 || 0);
+
+      const dateStr = m.timestamp ? new Date(m.timestamp).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+
+      let setsDetail = "";
+      if (m.set1Player1 !== undefined && m.set1Player2 !== undefined && m.set1Player1 !== null) {
+        setsDetail += `${m.set1Player1}:${m.set1Player2}`;
+      }
+      if (m.set2Player1 !== undefined && m.set2Player2 !== undefined && m.set2Player1 !== null) {
+        setsDetail += `, ${m.set2Player1}:${m.set2Player2}`;
+      }
+      if (m.set3Player1 !== undefined && m.set3Player2 !== undefined && m.set3Player1 !== null && m.set3Player1 !== "") {
+        setsDetail += `, ${m.set3Player1}:${m.set3Player2}`;
+      }
+
+      return `
+        <div class="match-item">
+          <div class="match-header">
+            <span>🏸 ${m.category || 'Přátelský'} • ${m.courtType || 'Hala'} • ${dateStr}</span>
+            ${allowActions ? `
+              <div style="display:flex; gap:8px;">
+                <button onclick="openEditMatchModal('${m.docId}')" class="btn-icon" title="Upravit"><i class="fa-solid fa-pen"></i></button>
+                <button onclick="deleteMatch('${m.docId}')" class="btn-icon" style="color:var(--danger);" title="Smazat"><i class="fa-solid fa-trash"></i></button>
+              </div>
+            ` : ''}
+          </div>
+          <div class="match-teams">
+            <div class="team ${winner1 ? 'winner' : ''}">
+              <div class="avatar" style="background-color: ${p1Color}; width: 28px; height: 28px; font-size: 0.85rem;">${p1Icon}</div>
+              <span>${p1Name}</span>
+            </div>
+            <div class="score-badge">${m.scoreSetsPlayer1 || 0} : ${m.scoreSetsPlayer2 || 0}</div>
+            <div class="team ${winner2 ? 'winner' : ''}" style="justify-content: flex-end;">
+              <span>${p2Name}</span>
+              <div class="avatar" style="background-color: ${p2Color}; width: 28px; height: 28px; font-size: 0.85rem;">${p2Icon}</div>
+            </div>
+          </div>
+          ${setsDetail ? `<div class="match-sets-detail">Sety: ${setsDetail}</div>` : ''}
+          ${m.notes ? `<div style="font-size:0.78rem; color:var(--text-muted); margin-top:8px; font-style:italic;">"${m.notes}"</div>` : ''}
+        </div>
+      `;
+    }
+
+    function createPlayerHTML(p, allowActions = false) {
+      const color = p.colorHex || '#2E7D32';
+      const icon = (p.avatarIcon === 'Iniciály' || !p.avatarIcon) ? p.name.substring(0, 2).toUpperCase() : p.avatarIcon;
+
+      return `
+        <div class="player-item">
+          <div class="player-info">
+            <div class="avatar" style="background-color: ${color};">${icon}</div>
+            <div>
+              <div class="player-name">${p.name}</div>
+              <div class="player-sub">${p.hand || 'Pravák'} • ${p.style || 'Všestranný'}</div>
+              ${p.notes ? `<div class="player-notes">💬 ${p.notes}</div>` : ''}
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="pill">${p.skillLevel || 'Hráč'}</span>
+            ${allowActions ? `
+              <button onclick="openEditPlayerModal('${p.docId}')" class="btn-icon" title="Upravit"><i class="fa-solid fa-pen"></i></button>
+              <button onclick="deletePlayer('${p.docId}')" class="btn-icon" style="color:var(--danger);" title="Smazat"><i class="fa-solid fa-trash"></i></button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    let selectedStatsPlayerId = null;
+    let selectedStatsOpponentId = null;
+
+    function calculatePlayerStatsJS(playerId, matchArray) {
+      let totalMatches = 0;
+      let wins = 0;
+      let losses = 0;
+      let setsWon = 0;
+      let setsLost = 0;
+      let ptsScored = 0;
+      let ptsConceded = 0;
+
+      matchArray.forEach(m => {
+        const isP1Team = (m.player1Id == playerId || m.player3Id == playerId);
+        const isP2Team = (m.player2Id == playerId || m.player4Id == playerId);
+
+        if (!isP1Team && !isP2Team) return;
+
+        totalMatches++;
+        const score1 = m.scoreSetsPlayer1 || 0;
+        const score2 = m.scoreSetsPlayer2 || 0;
+        const isP1Winner = score1 > score2;
+
+        const wonMatch = isP1Team ? isP1Winner : !isP1Winner;
+        if (wonMatch) wins++; else losses++;
+
+        if (isP1Team) {
+          setsWon += score1;
+          setsLost += score2;
+          ptsScored += (parseInt(m.set1Player1) || 0) + (parseInt(m.set2Player1) || 0) + (parseInt(m.set3Player1) || 0);
+          ptsConceded += (parseInt(m.set1Player2) || 0) + (parseInt(m.set2Player2) || 0) + (parseInt(m.set3Player2) || 0);
+        } else {
+          setsWon += score2;
+          setsLost += score1;
+          ptsScored += (parseInt(m.set1Player2) || 0) + (parseInt(m.set2Player2) || 0) + (parseInt(m.set3Player2) || 0);
+          ptsConceded += (parseInt(m.set1Player1) || 0) + (parseInt(m.set2Player1) || 0) + (parseInt(m.set3Player1) || 0);
+        }
+      });
+
+      const winRate = totalMatches > 0 ? (wins / totalMatches) * 100 : 0;
+
+      return {
+        totalMatches, wins, losses, winRate, setsWon, setsLost, ptsScored, ptsConceded
+      };
+    }
+
+    function calculateHeadToHeadJS(p1Id, p2Id, matchArray) {
+      let p1Wins = 0;
+      let p2Wins = 0;
+      let p1Sets = 0;
+      let p2Sets = 0;
+      const h2hMatches = [];
+
+      matchArray.forEach(m => {
+        const p1OnTeam1 = (m.player1Id == p1Id || m.player3Id == p1Id);
+        const p2OnTeam2 = (m.player2Id == p2Id || m.player4Id == p2Id);
+
+        const p2OnTeam1 = (m.player1Id == p2Id || m.player3Id == p2Id);
+        const p1OnTeam2 = (m.player2Id == p1Id || m.player4Id == p1Id);
+
+        const score1 = m.scoreSetsPlayer1 || 0;
+        const score2 = m.scoreSetsPlayer2 || 0;
+
+        if (p1OnTeam1 && p2OnTeam2) {
+          h2hMatches.push(m);
+          p1Sets += score1;
+          p2Sets += score2;
+          if (score1 > score2) p1Wins++; else p2Wins++;
+        } else if (p2OnTeam1 && p1OnTeam2) {
+          h2hMatches.push(m);
+          p1Sets += score2;
+          p2Sets += score1;
+          if (score1 > score2) p2Wins++; else p1Wins++;
+        }
+      });
+
+      return {
+        p1Wins, p2Wins, p1Sets, p2Sets, matches: h2hMatches
+      };
+    }
+
+    function onStatsPlayerChange(newVal) {
+      selectedStatsPlayerId = newVal;
+      renderStatsScreen();
+    }
+
+    function onStatsOpponentChange(newVal) {
+      selectedStatsOpponentId = newVal;
+      renderStatsScreen();
+    }
+
+    function renderStatsScreen() {
+      const container = document.getElementById('stats-tab-container');
+      if (!container) return;
+
+      if (players.length === 0) {
+        container.innerHTML = `
+          <div class="card" style="text-align: center; padding: 32px 20px;">
+            <div style="width: 56px; height: 56px; background: rgba(32, 223, 104, 0.15); border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; color: var(--accent-green); font-size: 1.6rem;">
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 8px;">Žádné statistiky k zobrazení</h3>
+            <p style="color: var(--text-muted); font-size: 0.88rem; max-width: 380px; margin: 0 auto; line-height: 1.4;">
+              Pro zobrazování statistik a analýz musíte mít v aplikaci vytvořeného alespoň jednoho hráče.<br><br>Přejděte do karty <b>Hráči</b> a přidejte nového hráče.
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      if (!selectedStatsPlayerId || !players.some(p => p.id == selectedStatsPlayerId)) {
+        selectedStatsPlayerId = players[0].id;
+      }
+
+      const activePlayer = players.find(p => p.id == selectedStatsPlayerId) || players[0];
+      const availableOpponents = players.filter(p => p.id != activePlayer.id);
+
+      if (!selectedStatsOpponentId || !availableOpponents.some(p => p.id == selectedStatsOpponentId)) {
+        selectedStatsOpponentId = availableOpponents.length > 0 ? availableOpponents[0].id : null;
+      }
+
+      const selectedOpponent = availableOpponents.find(p => p.id == selectedStatsOpponentId) || null;
+
+      const stat = calculatePlayerStatsJS(activePlayer.id, matches);
+
+      const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+      const recentMatches = matches.filter(m => (m.timestamp || 0) >= thirtyDaysAgo);
+      const last30 = calculatePlayerStatsJS(activePlayer.id, recentMatches);
+
+      let h2h = null;
+      if (selectedOpponent) {
+        h2h = calculateHeadToHeadJS(activePlayer.id, selectedOpponent.id, matches);
+      }
+
+      let html = `
+        <div style="margin-bottom: 16px;">
+          <h2 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-chart-column" style="color: var(--accent-green);"></i> Statistiky & analýza
+          </h2>
+
+          <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; margin-bottom: 16px;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">Vyberte hráče pro detail:</label>
+            <select id="stats-player-select" onchange="onStatsPlayerChange(this.value)" style="font-size: 1rem; font-weight: 700; padding: 12px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 12px; color: var(--text-main); width: 100%;">
+              ${players.map(p => {
+                const icon = (p.avatarIcon === 'Iniciály' || !p.avatarIcon) ? p.name.substring(0, 2).toUpperCase() : p.avatarIcon;
+                return `<option value="${p.id}" ${p.id == activePlayer.id ? 'selected' : ''}>${icon} ${p.name}</option>`;
+              }).join('')}
+            </select>
+          </div>
+        </div>
+
+        <!-- Section 1: Celkový přehled -->
+        <div style="margin-bottom: 20px;">
+          <h3 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 10px; color: var(--text-main);">Celkový přehled</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <!-- Úspěšnost -->
+            <div style="background: rgba(32, 223, 104, 0.08); border: 1px solid rgba(32, 223, 104, 0.25); border-radius: 16px; padding: 16px; text-align: center;">
+              <div style="font-size: 0.78rem; font-weight: 700; color: var(--accent-green); text-transform: uppercase; letter-spacing: 0.5px;">Úspěšnost</div>
+              <div style="font-size: 2rem; font-weight: 900; color: var(--accent-green); margin: 4px 0;">${stat.winRate.toFixed(0)} %</div>
+              <div style="display: inline-block; background: rgba(32, 223, 104, 0.15); color: var(--accent-green); padding: 3px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700;">
+                ${stat.wins} výher / ${stat.losses} proher
+              </div>
+            </div>
+
+            <!-- Sety -->
+            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; text-align: center;">
+              <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Sety</div>
+              <div style="font-size: 2rem; font-weight: 900; color: var(--text-main); margin: 4px 0;">${stat.setsWon} : ${stat.setsLost}</div>
+              <div style="display: inline-block; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-muted); padding: 3px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700;">
+                Body: ${stat.ptsScored} : ${stat.ptsConceded}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Statistiky za minulý měsíc (30 dní) -->
+        <div class="card" style="margin-bottom: 20px;">
+          <div class="card-header" style="margin-bottom: 12px;">
+            <div class="card-title" style="font-size: 1rem;">
+              <i class="fa-regular fa-calendar-days" style="color: var(--accent-green);"></i> Statistiky za minulý měsíc
+            </div>
+          </div>
+
+          ${last30.totalMatches === 0 ? `
+            <div style="background: var(--bg-input); border-radius: 12px; padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+              V posledních 30 dnech nebyl odehrán žádný zápas.
+            </div>
+          ` : `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+              <div style="background: var(--bg-input); border-radius: 12px; padding: 12px;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Počet zápasů</div>
+                <div style="font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin: 2px 0;">${last30.totalMatches}</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">${last30.wins} výher / ${last30.losses} proher</div>
+              </div>
+
+              <div style="background: rgba(32, 223, 104, 0.1); border-radius: 12px; padding: 12px;">
+                <div style="font-size: 0.75rem; color: var(--accent-green); font-weight: 600;">Úspěšnost</div>
+                <div style="font-size: 1.4rem; font-weight: 800; color: var(--accent-green); margin: 2px 0;">${last30.winRate.toFixed(0)} %</div>
+                <div style="font-size: 0.72rem; color: var(--accent-green); opacity: 0.85;">${last30.winRate >= 50 ? 'Aktivní forma' : 'Příležitost k růstu'}</div>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div style="background: var(--bg-input); border-radius: 12px; padding: 12px;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Sety</div>
+                <div style="font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin: 2px 0;">${last30.setsWon} : ${last30.setsLost}</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">Bilance: ${last30.setsWon - last30.setsLost >= 0 ? '+' : ''}${last30.setsWon - last30.setsLost}</div>
+              </div>
+
+              <div style="background: var(--bg-input); border-radius: 12px; padding: 12px;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Body</div>
+                <div style="font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin: 2px 0;">${last30.ptsScored} : ${last30.ptsConceded}</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">Skóre bodů: ${last30.ptsScored - last30.ptsConceded >= 0 ? '+' : ''}${last30.ptsScored - last30.ptsConceded}</div>
+              </div>
+            </div>
+          `}
+        </div>
+
+        <!-- Section 3: Vzájemná bilance (H2H) -->
+        <div class="card" style="margin-bottom: 20px;">
+          <div class="card-header" style="margin-bottom: 12px;">
+            <div class="card-title" style="font-size: 1rem;">
+              <i class="fa-solid fa-people-arrows" style="color: var(--accent-green);"></i> Vzájemná Bilance (H2H)
+            </div>
+          </div>
+
+          ${availableOpponents.length === 0 ? `
+            <p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 12px;">Pro porovnání vzájemné bilance je potřeba mít alespoň 2 hráče.</p>
+          ` : `
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">Porovnat s hráčem:</label>
+            <select id="stats-opponent-select" onchange="onStatsOpponentChange(this.value)" style="font-size: 0.95rem; font-weight: 700; padding: 10px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 12px; color: var(--text-main); width: 100%; margin-bottom: 16px;">
+              ${availableOpponents.map(p => {
+                const icon = (p.avatarIcon === 'Iniciály' || !p.avatarIcon) ? p.name.substring(0, 2).toUpperCase() : p.avatarIcon;
+                return `<option value="${p.id}" ${p.id == (selectedOpponent ? selectedOpponent.id : '') ? 'selected' : ''}>${icon} ${p.name}</option>`;
+              }).join('')}
+            </select>
+
+            ${h2h ? `
+              <div style="background: var(--bg-input); border-radius: 16px; padding: 16px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; text-align: center; gap: 8px; margin-bottom: 20px;">
+                <div>
+                  <div class="avatar" style="background-color: ${activePlayer.colorHex || '#2E7D32'}; width: 42px; height: 42px; font-size: 1.2rem; margin: 0 auto 6px auto;">
+                    ${(activePlayer.avatarIcon === 'Iniciály' || !activePlayer.avatarIcon) ? activePlayer.name.substring(0, 2).toUpperCase() : activePlayer.avatarIcon}
+                  </div>
+                  <div style="font-weight: 800; font-size: 0.88rem; color: var(--text-main);">${activePlayer.name}</div>
+                  <div style="font-size: 1.3rem; font-weight: 900; color: var(--accent-green); margin-top: 2px;">${h2h.p1Wins} výher</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">${h2h.p1Sets} setů</div>
+                </div>
+
+                <div style="padding: 0 8px;">
+                  <div style="font-size: 1.1rem; font-weight: 900; color: var(--text-muted); opacity: 0.5;">VS</div>
+                  <div style="font-size: 0.75rem; font-weight: 800; color: var(--accent-green); margin-top: 4px;">${h2h.matches.length} zápasů</div>
+                </div>
+
+                <div>
+                  <div class="avatar" style="background-color: ${selectedOpponent ? (selectedOpponent.colorHex || '#2E7D32') : '#2E7D32'}; width: 42px; height: 42px; font-size: 1.2rem; margin: 0 auto 6px auto;">
+                    ${selectedOpponent ? ((selectedOpponent.avatarIcon === 'Iniciály' || !selectedOpponent.avatarIcon) ? selectedOpponent.name.substring(0, 2).toUpperCase() : selectedOpponent.avatarIcon) : '🏸'}
+                  </div>
+                  <div style="font-weight: 800; font-size: 0.88rem; color: var(--text-main);">${selectedOpponent ? selectedOpponent.name : 'Soupeř'}</div>
+                  <div style="font-size: 1.3rem; font-weight: 900; color: var(--danger); margin-top: 2px;">${h2h.p2Wins} výher</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">${h2h.p2Sets} setů</div>
+                </div>
+              </div>
+
+              <h4 style="font-size: 0.92rem; font-weight: 800; margin-bottom: 12px; color: var(--text-main);">
+                Výčet všech vzájemných zápasů (${h2h.matches.length}):
+              </h4>
+
+              ${h2h.matches.length === 0 ? `
+                <div style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 12px;">Mezi těmito hráči nebyly odehrány žádné vzájemné zápasy.</div>
+              ` : `
+                <div>
+                  ${h2h.matches.map(m => createMatchHTML(m, false)).join('')}
+                </div>
+              `}
+            ` : ''}
+          `}
+        </div>
+
+        <!-- Section 4: Celkový žebříček -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom: 12px; font-size: 1rem;">
+            <i class="fa-solid fa-ranking-star" style="color: #ffd700;"></i> Celkový žebříček skupiny
+          </div>
+          <div id="stats-leaderboard"></div>
+        </div>
+      `;
+
+      container.innerHTML = html;
+      renderLeaderboard();
+    }
+
+    function renderLeaderboard() {
+      const container = document.getElementById('stats-leaderboard');
+      if (!container) return;
+      if (players.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-muted); text-align: center;">Žádná data pro žebříček.</p>';
+        return;
+      }
+
+      const statsMap = {};
+      players.forEach(p => statsMap[p.id] = { id: p.id, name: p.name, colorHex: p.colorHex || '#2E7D32', avatarIcon: p.avatarIcon || '🏸', wins: 0, total: 0 });
+
+      matches.forEach(m => {
+        const p1 = m.player1Id;
+        const p2 = m.player2Id;
+        const w1 = (m.scoreSetsPlayer1 || 0) > (m.scoreSetsPlayer2 || 0);
+
+        if (statsMap[p1]) {
+          statsMap[p1].total++;
+          if (w1) statsMap[p1].wins++;
+        }
+        if (statsMap[p2]) {
+          statsMap[p2].total++;
+          if (!w1) statsMap[p2].wins++;
+        }
+      });
+
+      const list = Object.values(statsMap).map(item => {
+        const rate = item.total > 0 ? ((item.wins / item.total) * 100).toFixed(1) : "0.0";
+        return { ...item, rate: parseFloat(rate) };
+      }).sort((a, b) => b.rate - a.rate || b.wins - a.wins);
+
+      container.innerHTML = list.map((item, idx) => {
+        const avatarSymbol = (item.avatarIcon === 'Iniciály' || !item.avatarIcon) ? item.name.substring(0, 2).toUpperCase() : item.avatarIcon;
+        return `
+          <div class="player-item">
+            <div class="player-info">
+              <span style="font-weight: 800; color: var(--accent-green); width: 22px;">#${idx + 1}</span>
+              <div class="avatar" style="background-color: ${item.colorHex}; width:36px; height:36px; font-size:1.1rem;">${avatarSymbol}</div>
+              <div>
+                <div class="player-name">${item.name}</div>
+                <div class="player-sub">${item.wins} výher / ${item.total} zápasů</div>
+              </div>
+            </div>
+            <div style="font-weight: 800; font-size: 1rem; color: var(--accent-green);">
+              ${item.rate} %
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Navigation & Tabs
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+      const targetTab = document.getElementById('tab-' + tabId);
+      if (targetTab) targetTab.classList.add('active');
+
+      const tabsOrder = ['dashboard', 'matches', 'record', 'stats', 'players'];
+      const index = tabsOrder.indexOf(tabId);
+      const navItems = document.querySelectorAll('.nav-item');
+      if (index !== -1 && navItems[index]) {
+        navItems[index].classList.add('active');
+      }
+
+      if (tabId === 'stats') {
+        renderStatsScreen();
+      }
+    }
+
+    function handleZapsatNav() {
+      openAddMatchModal();
+    }
+
+    // Modal Helpers
+    function updatePlayerModalPreview() {
+      const name = document.getElementById('p-name') ? document.getElementById('p-name').value.trim() : "";
+      const color = document.getElementById('p-color') ? (document.getElementById('p-color').value || '#2E7D32') : '#2E7D32';
+      const icon = document.getElementById('p-avatar') ? (document.getElementById('p-avatar').value || '🏸') : '🏸';
+
+      const previewEl = document.getElementById('p-avatar-preview');
+      if (previewEl) {
+        previewEl.style.backgroundColor = color;
+        const symbol = (icon === 'Iniciály' || !icon) ? (name ? name.substring(0, 2).toUpperCase() : 'HN') : icon;
+        previewEl.innerText = symbol;
+      }
+    }
+
+    function selectPlayerColor(hex, el) {
+      document.getElementById('p-color').value = hex;
+      document.querySelectorAll('#color-swatches-list .color-swatch').forEach(s => s.classList.remove('selected'));
+      if (el) el.classList.add('selected');
+      updatePlayerModalPreview();
+    }
+
+    function selectPlayerAvatar(icon, el) {
+      document.getElementById('p-avatar').value = icon;
+      document.querySelectorAll('#avatar-options-list .avatar-option').forEach(o => o.classList.remove('selected'));
+      if (el) el.classList.add('selected');
+      updatePlayerModalPreview();
+    }
+
+    function openAddPlayerModal() {
+      document.getElementById('player-modal-heading').innerText = "Přidat nového hráče";
+      document.getElementById('p-doc-id').value = "";
+      document.getElementById('p-name').value = "";
+      document.getElementById('p-hand').value = "Pravá";
+      document.getElementById('p-skill').value = "Pokročilý";
+      document.getElementById('p-style').value = "Všestranný";
+      document.getElementById('p-notes').value = "";
+
+      selectPlayerColor('#2E7D32', document.querySelectorAll('#color-swatches-list .color-swatch')[0]);
+      selectPlayerAvatar('🏸', document.querySelectorAll('#avatar-options-list .avatar-option')[0]);
+      updatePlayerModalPreview();
+
+      document.getElementById('modal-player').classList.add('active');
+    }
+
+    function openEditPlayerModal(docId) {
+      const p = players.find(x => x.docId === docId);
+      if (!p) return;
+
+      document.getElementById('player-modal-heading').innerText = "Upravit hráče";
+      document.getElementById('p-doc-id').value = docId;
+      document.getElementById('p-name').value = p.name || "";
+      let h = p.hand || "Pravá";
+      if (h === "Pravák") h = "Pravá";
+      if (h === "Levák") h = "Levá";
+      document.getElementById('p-hand').value = h;
+      document.getElementById('p-skill').value = p.skillLevel || "Pokročilý";
+      document.getElementById('p-style').value = p.style || "Všestranný";
+      document.getElementById('p-notes').value = p.notes || "";
+
+      const color = p.colorHex || '#2E7D32';
+      const icon = p.avatarIcon || '🏸';
+
+      document.getElementById('p-color').value = color;
+      document.querySelectorAll('#color-swatches-list .color-swatch').forEach(s => {
+        s.classList.toggle('selected', s.style.backgroundColor.toLowerCase() === color.toLowerCase() || s.getAttribute('onclick').includes(color));
+      });
+
+      document.getElementById('p-avatar').value = icon;
+      document.querySelectorAll('#avatar-options-list .avatar-option').forEach(o => {
+        o.classList.toggle('selected', o.innerText.trim() === icon || (icon === 'Iniciály' && o.innerText.trim() === 'ABC'));
+      });
+      updatePlayerModalPreview();
+
+      document.getElementById('modal-player').classList.add('active');
+    }
+
+    function savePlayer() {
+      const docId = document.getElementById('p-doc-id').value;
+      const name = document.getElementById('p-name').value.trim();
+      if (!name) {
+        alert("Zadejte jméno hráče!");
+        return;
+      }
+
+      const playerObj = {
+        name: name,
+        hand: document.getElementById('p-hand').value,
+        skillLevel: document.getElementById('p-skill').value,
+        style: document.getElementById('p-style').value,
+        colorHex: document.getElementById('p-color').value,
+        avatarIcon: document.getElementById('p-avatar').value,
+        notes: document.getElementById('p-notes').value.trim()
+      };
+
+      const collectionRef = db.collection("groups").doc(currentRoom).collection("players");
+
+      if (docId) {
+        collectionRef.doc(docId).update(playerObj)
+          .then(() => closeModal('modal-player'))
+          .catch(err => alert("Chyba při úpravě hráče: " + err.message));
+      } else {
+        playerObj.id = Date.now();
+        collectionRef.add(playerObj)
+          .then(() => closeModal('modal-player'))
+          .catch(err => alert("Chyba při přidávání hráče: " + err.message));
+      }
+    }
+
+    function deletePlayer(docId) {
+      if (!confirm("Opravdu chcete smazat tohoto hráče?")) return;
+      db.collection("groups").doc(currentRoom).collection("players").doc(docId).delete()
+        .catch(err => alert("Chyba při mazání hráče: " + err.message));
+    }
+
+    function onMatchP1Change() {
+      const p1Select = document.getElementById('m-p1');
+      const p2Select = document.getElementById('m-p2');
+      if (p1Select.value && p1Select.value === p2Select.value) {
+        for (let i = 0; i < p2Select.options.length; i++) {
+          if (p2Select.options[i].value !== p1Select.value) {
+            p2Select.selectedIndex = i;
+            break;
+          }
+        }
+      }
+      updatePlayerSelectPreviews();
+    }
+
+    function onMatchP2Change() {
+      const p1Select = document.getElementById('m-p1');
+      const p2Select = document.getElementById('m-p2');
+      if (p2Select.value && p1Select.value === p2Select.value) {
+        for (let i = 0; i < p1Select.options.length; i++) {
+          if (p1Select.options[i].value !== p2Select.value) {
+            p1Select.selectedIndex = i;
+            break;
+          }
+        }
+      }
+      updatePlayerSelectPreviews();
+    }
+
+    // Populate Match Player Select Dropdowns with Icon Preview
+    function populatePlayerSelects() {
+      const p1Select = document.getElementById('m-p1');
+      const p2Select = document.getElementById('m-p2');
+
+      p1Select.innerHTML = "";
+      p2Select.innerHTML = "";
+
+      if (players.length === 0) {
+        p1Select.innerHTML = '<option value="">Žádní hráči k dispozici</option>';
+        p2Select.innerHTML = '<option value="">Žádní hráči k dispozici</option>';
+        return;
+      }
+
+      players.forEach(p => {
+        const iconSymbol = (p.avatarIcon === 'Iniciály' || !p.avatarIcon) ? p.name.substring(0, 2).toUpperCase() : p.avatarIcon;
+        const optionText = `${iconSymbol} ${p.name}`;
+
+        const opt1 = document.createElement('option');
+        opt1.value = p.id;
+        opt1.textContent = optionText;
+        p1Select.appendChild(opt1);
+
+        const opt2 = document.createElement('option');
+        opt2.value = p.id;
+        opt2.textContent = optionText;
+        p2Select.appendChild(opt2);
+      });
+
+      if (players.length >= 2) {
+        p1Select.selectedIndex = 0;
+        p2Select.selectedIndex = 1;
+      } else {
+        p1Select.selectedIndex = 0;
+        p2Select.selectedIndex = 0;
+      }
+
+      if (p1Select.value && p1Select.value === p2Select.value && players.length >= 2) {
+        p2Select.selectedIndex = (p1Select.selectedIndex + 1) % players.length;
+      }
+
+      updatePlayerSelectPreviews();
+    }
+
+    function updatePlayerSelectPreviews() {
+      const p1Id = document.getElementById('m-p1').value;
+      const p2Id = document.getElementById('m-p2').value;
+
+      const p1Obj = getPlayerObj(p1Id);
+      const p2Obj = getPlayerObj(p2Id);
+
+      const p1Prev = document.getElementById('m-p1-avatar-preview');
+      const p2Prev = document.getElementById('m-p2-avatar-preview');
+
+      if (p1Obj) {
+        p1Prev.style.backgroundColor = p1Obj.colorHex || '#2E7D32';
+        p1Prev.innerText = (p1Obj.avatarIcon === 'Iniciály' || !p1Obj.avatarIcon) ? p1Obj.name.substring(0, 2).toUpperCase() : p1Obj.avatarIcon;
+      } else {
+        p1Prev.style.backgroundColor = '#2E7D32';
+        p1Prev.innerText = '🏸';
+      }
+
+      if (p2Obj) {
+        p2Prev.style.backgroundColor = p2Obj.colorHex || '#2E7D32';
+        p2Prev.innerText = (p2Obj.avatarIcon === 'Iniciály' || !p2Obj.avatarIcon) ? p2Obj.name.substring(0, 2).toUpperCase() : p2Obj.avatarIcon;
+      } else {
+        p2Prev.style.backgroundColor = '#2E7D32';
+        p2Prev.innerText = '🏸';
+      }
+    }
+
+    function toggleSet3() {
+      const set3Row = document.getElementById('set3-row');
+      const btn = document.getElementById('toggle-set3-btn');
+      if (set3Row.style.display === 'none' || !set3Row.style.display) {
+        set3Row.style.display = 'grid';
+        btn.innerHTML = '<i class="fa-solid fa-minus"></i> Odebrat 3. set';
+      } else {
+        set3Row.style.display = 'none';
+        document.getElementById('m-set3-p1').value = "";
+        document.getElementById('m-set3-p2').value = "";
+        btn.innerHTML = '<i class="fa-solid fa-plus"></i> Přidat 3. set';
+      }
+    }
+
+    function openAddMatchModal() {
+      if (players.length < 2) {
+        alert("Pro zapsání zápasu musíte mít vytvořeny alespoň 2 hráče!");
+        switchTab('players');
+        openAddPlayerModal();
+        return;
+      }
+
+      document.getElementById('match-modal-heading').innerText = "Zapsat nový zápas";
+      document.getElementById('m-doc-id').value = "";
+      document.getElementById('m-category').value = "Přátelský";
+      document.getElementById('m-court').value = "Hala";
+
+      document.getElementById('m-set1-p1').value = "21";
+      document.getElementById('m-set1-p2').value = "18";
+      document.getElementById('m-set2-p1').value = "21";
+      document.getElementById('m-set2-p2').value = "15";
+
+      document.getElementById('set3-row').style.display = 'none';
+      document.getElementById('m-set3-p1').value = "";
+      document.getElementById('m-set3-p2').value = "";
+      document.getElementById('toggle-set3-btn').innerHTML = '<i class="fa-solid fa-plus"></i> Přidat 3. set';
+
+      document.getElementById('m-notes').value = "";
+
+      populatePlayerSelects();
+      document.getElementById('modal-match').classList.add('active');
+    }
+
+    function openEditMatchModal(docId) {
+      const m = matches.find(x => x.docId === docId);
+      if (!m) return;
+
+      document.getElementById('match-modal-heading').innerText = "Upravit zápas";
+      document.getElementById('m-doc-id').value = docId;
+
+      populatePlayerSelects();
+
+      document.getElementById('m-p1').value = m.player1Id || "";
+      document.getElementById('m-p2').value = m.player2Id || "";
+      updatePlayerSelectPreviews();
+
+      document.getElementById('m-category').value = m.category || "Přátelský";
+      document.getElementById('m-court').value = m.courtType || "Hala";
+
+      document.getElementById('m-set1-p1').value = m.set1Player1 !== undefined ? m.set1Player1 : "";
+      document.getElementById('m-set1-p2').value = m.set1Player2 !== undefined ? m.set1Player2 : "";
+      document.getElementById('m-set2-p1').value = m.set2Player1 !== undefined ? m.set2Player1 : "";
+      document.getElementById('m-set2-p2').value = m.set2Player2 !== undefined ? m.set2Player2 : "";
+
+      if (m.set3Player1 !== undefined && m.set3Player1 !== null && m.set3Player1 !== "") {
+        document.getElementById('set3-row').style.display = 'grid';
+        document.getElementById('m-set3-p1').value = m.set3Player1;
+        document.getElementById('m-set3-p2').value = m.set3Player2;
+        document.getElementById('toggle-set3-btn').innerHTML = '<i class="fa-solid fa-minus"></i> Odebrat 3. set';
+      } else {
+        document.getElementById('set3-row').style.display = 'none';
+        document.getElementById('m-set3-p1').value = "";
+        document.getElementById('m-set3-p2').value = "";
+        document.getElementById('toggle-set3-btn').innerHTML = '<i class="fa-solid fa-plus"></i> Přidat 3. set';
+      }
+
+      document.getElementById('m-notes').value = m.notes || "";
+
+      document.getElementById('modal-match').classList.add('active');
+    }
+
+    function saveMatch() {
+      const docId = document.getElementById('m-doc-id').value;
+      const p1Id = parseInt(document.getElementById('m-p1').value);
+      const p2Id = parseInt(document.getElementById('m-p2').value);
+
+      if (!p1Id || !p2Id || p1Id === p2Id) {
+        alert("Vyberte dva různé hráče!");
+        return;
+      }
+
+      const s1p1 = parseInt(document.getElementById('m-set1-p1').value) || 0;
+      const s1p2 = parseInt(document.getElementById('m-set1-p2').value) || 0;
+      const s2p1 = parseInt(document.getElementById('m-set2-p1').value) || 0;
+      const s2p2 = parseInt(document.getElementById('m-set2-p2').value) || 0;
+
+      const s3p1Val = document.getElementById('m-set3-p1').value;
+      const s3p2Val = document.getElementById('m-set3-p2').value;
+      const hasSet3 = s3p1Val !== "" && s3p2Val !== "";
+      const s3p1 = hasSet3 ? (parseInt(s3p1Val) || 0) : null;
+      const s3p2 = hasSet3 ? (parseInt(s3p2Val) || 0) : null;
+
+      // Calculate sets won automatically
+      let setsP1 = 0;
+      let setsP2 = 0;
+
+      if (s1p1 > s1p2) setsP1++; else if (s1p2 > s1p1) setsP2++;
+      if (s2p1 > s2p2) setsP1++; else if (s2p2 > s2p1) setsP2++;
+      if (hasSet3) {
+        if (s3p1 > s3p2) setsP1++; else if (s3p2 > s3p1) setsP2++;
+      }
+
+      const matchObj = {
+        matchType: "SINGLES",
+        category: document.getElementById('m-category').value,
+        courtType: document.getElementById('m-court').value,
+        player1Id: p1Id,
+        player2Id: p2Id,
+        scoreSetsPlayer1: setsP1,
+        scoreSetsPlayer2: setsP2,
+        set1Player1: s1p1,
+        set1Player2: s1p2,
+        set2Player1: s2p1,
+        set2Player2: s2p2,
+        set3Player1: s3p1,
+        set3Player2: s3p2,
+        notes: document.getElementById('m-notes').value.trim()
+      };
+
+      const collectionRef = db.collection("groups").doc(currentRoom).collection("matches");
+
+      if (docId) {
+        collectionRef.doc(docId).update(matchObj)
+          .then(() => closeModal('modal-match'))
+          .catch(err => alert("Chyba při úpravě zápasu: " + err.message));
+      } else {
+        matchObj.timestamp = Date.now();
+        collectionRef.add(matchObj)
+          .then(() => closeModal('modal-match'))
+          .catch(err => alert("Chyba při ukládání zápasu: " + err.message));
+      }
+    }
+
+    function deleteMatch(docId) {
+      if (!confirm("Opravdu chcete smazat tento zápas?")) return;
+      db.collection("groups").doc(currentRoom).collection("matches").doc(docId).delete()
+        .catch(err => alert("Chyba při mazání zápasu: " + err.message));
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+  </script>
+</body>
+</html>

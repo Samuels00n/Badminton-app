@@ -347,7 +347,7 @@ private fun ManualMatchForm(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    Text("Hráč / Tým 2 (Soupeř):", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Text("Hráč / Tým 2:", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     Spacer(modifier = Modifier.height(4.dp))
                     PlayerDropdown(players = players.filter { it.id != selectedP1?.id }, selectedPlayer = selectedP2, onSelect = { selectedP2 = it }, label = "Hráč 2")
 
