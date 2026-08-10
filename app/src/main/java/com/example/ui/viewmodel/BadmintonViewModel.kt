@@ -328,10 +328,19 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
             syncStatusMessage = if (cleanedRoom.isNotBlank()) "Připojeno ke skupině $cleanedRoom" else "Připojeno"
         )
 
-        triggerCloudSync()
+        viewModelScope.launch {
+            repository.deleteAllData()
+            setupFirestoreListeners(cleanedRoom)
+            triggerCloudSync()
+        }
     }
 
     fun signOutGoogle() {
+        firestorePlayersListener?.remove()
+        firestoreMatchesListener?.remove()
+        firestorePlayersListener = null
+        firestoreMatchesListener = null
+
         prefs.edit()
             .putBoolean("is_signed_in", false)
             .remove("display_name")
@@ -346,16 +355,16 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
             syncRoomId = "",
             syncStatusMessage = "Odpojeno ze skupiny"
         )
+
+        viewModelScope.launch {
+            repository.deleteAllData()
+        }
     }
 
     fun setSyncRoomId(roomId: String) {
         val cleaned = roomId.trim().uppercase(Locale.ROOT)
         if (cleaned.isBlank()) {
-            prefs.edit().remove("sync_room_id").apply()
-            _googleAccount.value = _googleAccount.value.copy(
-                syncRoomId = "",
-                syncStatusMessage = "Skupina odpojena"
-            )
+            signOutGoogle()
             return
         }
 
@@ -365,7 +374,11 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
             syncStatusMessage = "Kód skupiny nastaven na: $cleaned"
         )
 
-        triggerCloudSync()
+        viewModelScope.launch {
+            repository.deleteAllData()
+            setupFirestoreListeners(cleaned)
+            triggerCloudSync()
+        }
     }
 
     fun triggerCloudSync() {
