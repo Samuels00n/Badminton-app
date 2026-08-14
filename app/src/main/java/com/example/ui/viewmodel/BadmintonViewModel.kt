@@ -162,9 +162,11 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                 .addSnapshotListener { snapshot, e ->
                     if (e != null || snapshot == null) return@addSnapshotListener
                     viewModelScope.launch {
-                        val remotePlayerIds = snapshot.documents.mapNotNull { it.getLong("id") }.toSet()
+                        val remotePlayerIds = snapshot.documents.mapNotNull {
+                            it.getLong("id") ?: it.id.toLongOrNull()
+                        }.toSet()
                         for (doc in snapshot.documents) {
-                            val pId = doc.getLong("id") ?: continue
+                            val pId = doc.getLong("id") ?: doc.id.toLongOrNull() ?: continue
                             val name = doc.getString("name") ?: continue
                             val hand = doc.getString("hand") ?: "Pravák"
                             val style = doc.getString("style") ?: "Univerzál"
@@ -202,18 +204,24 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                 .addSnapshotListener { snapshot, e ->
                     if (e != null || snapshot == null) return@addSnapshotListener
                     viewModelScope.launch {
-                        val remoteMatchIds = snapshot.documents.mapNotNull { it.getLong("id") }.toSet()
+                        val remoteMatchIds = snapshot.documents.mapNotNull { doc ->
+                            doc.getLong("id") ?: doc.id.toLongOrNull() ?: doc.getLong("timestamp")
+                        }.toSet()
                         for (doc in snapshot.documents) {
-                            val mId = doc.getLong("id") ?: continue
+                            val mId = doc.getLong("id")
+                                ?: doc.id.toLongOrNull()
+                                ?: doc.getLong("timestamp")
+                                ?: Math.abs(doc.id.hashCode().toLong())
                             val matchType = doc.getString("matchType") ?: "SINGLES"
                             val category = doc.getString("category") ?: "Přátelský"
                             val p1Id = doc.getLong("player1Id") ?: continue
                             val p2Id = doc.getLong("player2Id") ?: continue
                             val p3Id = doc.getLong("player3Id")
                             val p4Id = doc.getLong("player4Id")
-                            val setsWinner = doc.getLong("setsWinner")?.toInt() ?: 1
                             val scoreSetsPlayer1 = doc.getLong("scoreSetsPlayer1")?.toInt() ?: 0
                             val scoreSetsPlayer2 = doc.getLong("scoreSetsPlayer2")?.toInt() ?: 0
+                            val setsWinner = doc.getLong("setsWinner")?.toInt()
+                                ?: if (scoreSetsPlayer1 >= scoreSetsPlayer2) 1 else 2
                             val set1Player1 = doc.getLong("set1Player1")?.toInt() ?: 0
                             val set1Player2 = doc.getLong("set1Player2")?.toInt() ?: 0
                             val set2Player1 = doc.getLong("set2Player1")?.toInt()

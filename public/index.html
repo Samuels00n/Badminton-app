@@ -1153,6 +1153,13 @@
         return;
       }
 
+      if (playersUnsub) { playersUnsub(); playersUnsub = null; }
+      if (matchesUnsub) { matchesUnsub(); matchesUnsub = null; }
+
+      players = [];
+      matches = [];
+      renderAll();
+
       currentRoom = input.toUpperCase();
       localStorage.setItem('badminton_room', currentRoom);
 
@@ -1177,13 +1184,17 @@
     }
 
     function disconnectGroup() {
-      if (playersUnsub) playersUnsub();
-      if (matchesUnsub) matchesUnsub();
+      if (playersUnsub) { playersUnsub(); playersUnsub = null; }
+      if (matchesUnsub) { matchesUnsub(); matchesUnsub = null; }
 
       closeModal('modal-group-sync');
 
       currentRoom = "";
+      players = [];
+      matches = [];
       localStorage.removeItem('badminton_room');
+
+      renderAll();
 
       document.getElementById('screen-join').style.display = 'flex';
       document.getElementById('app-view').style.display = 'none';
@@ -2023,12 +2034,14 @@
       const collectionRef = db.collection("groups").doc(currentRoom).collection("players");
 
       if (docId) {
-        collectionRef.doc(docId).update(playerObj)
+        collectionRef.doc(docId).set(playerObj, { merge: true })
           .then(() => closeModal('modal-player'))
           .catch(err => alert("Chyba při úpravě hráče: " + err.message));
       } else {
-        playerObj.id = Date.now();
-        collectionRef.add(playerObj)
+        const newId = Date.now();
+        playerObj.id = newId;
+        playerObj.createdAt = newId;
+        collectionRef.doc(newId.toString()).set(playerObj)
           .then(() => closeModal('modal-player'))
           .catch(err => alert("Chyba při přidávání hráče: " + err.message));
       }
@@ -2251,12 +2264,15 @@
         if (s3p1 > s3p2) setsP1++; else if (s3p2 > s3p1) setsP2++;
       }
 
+      const setsSeq = `${s1p1}:${s1p2},${s2p1}:${s2p2}${hasSet3 ? `,${s3p1}:${s3p2}` : ''}`;
+
       const matchObj = {
         matchType: "SINGLES",
         category: document.getElementById('m-category').value,
         courtType: document.getElementById('m-court').value,
         player1Id: p1Id,
         player2Id: p2Id,
+        setsWinner: setsP1 >= setsP2 ? 1 : 2,
         scoreSetsPlayer1: setsP1,
         scoreSetsPlayer2: setsP2,
         set1Player1: s1p1,
@@ -2265,18 +2281,22 @@
         set2Player2: s2p2,
         set3Player1: s3p1,
         set3Player2: s3p2,
+        durationMinutes: 30,
+        setsSequence: setsSeq,
         notes: document.getElementById('m-notes').value.trim()
       };
 
       const collectionRef = db.collection("groups").doc(currentRoom).collection("matches");
 
       if (docId) {
-        collectionRef.doc(docId).update(matchObj)
+        collectionRef.doc(docId).set(matchObj, { merge: true })
           .then(() => closeModal('modal-match'))
           .catch(err => alert("Chyba při úpravě zápasu: " + err.message));
       } else {
-        matchObj.timestamp = Date.now();
-        collectionRef.add(matchObj)
+        const newId = Date.now();
+        matchObj.id = newId;
+        matchObj.timestamp = newId;
+        collectionRef.doc(newId.toString()).set(matchObj)
           .then(() => closeModal('modal-match'))
           .catch(err => alert("Chyba při ukládání zápasu: " + err.message));
       }
