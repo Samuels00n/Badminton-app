@@ -843,6 +843,146 @@
       gap: 10px;
       margin-top: 20px;
     }
+
+    /* Form, Streaks & Milestones */
+    .recent-form-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .form-circle {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.82rem;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      cursor: default;
+      transition: transform 0.15s ease;
+      position: relative;
+    }
+
+    .form-circle:hover {
+      transform: scale(1.1);
+    }
+
+    .form-circle.win {
+      background: linear-gradient(135deg, #12883e, #20df68);
+      color: #05140a;
+      border: 1.5px solid #34ee7b;
+    }
+
+    .form-circle.loss {
+      background: linear-gradient(135deg, #991b1b, #ef4444);
+      color: #ffffff;
+      border: 1.5px solid #f87171;
+    }
+
+    .streak-banner {
+      background: linear-gradient(135deg, rgba(32, 223, 104, 0.12), rgba(20, 34, 24, 0.7));
+      border: 1px solid rgba(32, 223, 104, 0.3);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .streak-banner.cold {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(30, 20, 20, 0.7));
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .achievement-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 10px;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .achievement-card.unlocked {
+      background: linear-gradient(135deg, rgba(32, 223, 104, 0.08), rgba(20, 34, 24, 0.4));
+      border-color: rgba(32, 223, 104, 0.4);
+      box-shadow: 0 4px 14px rgba(32, 223, 104, 0.08);
+    }
+
+    .achievement-card.locked {
+      opacity: 0.7;
+    }
+
+    .achievement-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+
+    .achievement-card.unlocked .achievement-icon {
+      background: rgba(32, 223, 104, 0.18);
+      border-color: rgba(32, 223, 104, 0.45);
+      box-shadow: 0 0 12px rgba(32, 223, 104, 0.25);
+    }
+
+    .achievement-badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .achievement-badge-pill.diamond {
+      background: rgba(96, 165, 250, 0.2);
+      color: #93c5fd;
+      border: 1px solid rgba(96, 165, 250, 0.5);
+    }
+
+    .achievement-badge-pill.gold {
+      background: rgba(251, 191, 36, 0.2);
+      color: #fde047;
+      border: 1px solid rgba(251, 191, 36, 0.5);
+    }
+
+    .achievement-badge-pill.silver {
+      background: rgba(203, 213, 225, 0.2);
+      color: #e2e8f0;
+      border: 1px solid rgba(203, 213, 225, 0.5);
+    }
+
+    .achievement-badge-pill.bronze {
+      background: rgba(217, 119, 6, 0.2);
+      color: #fb923c;
+      border: 1px solid rgba(217, 119, 6, 0.5);
+    }
+
+    .achievement-badge-pill.in-progress {
+      background: rgba(140, 163, 147, 0.15);
+      color: var(--text-muted);
+      border: 1px solid rgba(140, 163, 147, 0.25);
+    }
   </style>
 </head>
 <body>
@@ -971,17 +1111,6 @@
 
       <!-- Tab 2: Zápasy (Matches) -->
       <section id="tab-matches" class="tab-content">
-        <div style="display: flex; gap: 10px; margin-bottom: 12px;">
-          <button class="btn btn-primary" onclick="openAddMatchModal()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="16"/>
-              <line x1="8" y1="12" x2="16" y2="12"/>
-            </svg>
-            Nový zápas
-          </button>
-        </div>
-
         <!-- Filters -->
         <div class="filter-bar" style="margin-bottom: 10px;">
           <div class="filter-chip active" onclick="setMatchFilter('all', this)">Všechny</div>
@@ -1815,13 +1944,6 @@
           <div class="match-header">
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
               <span>🏸 ${m.category || 'Přátelský'} • ${m.courtType || 'Hala'} • ${dateStr}</span>
-              ${isRet ? `
-                <span class="retire-badge">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                  <span>Skreč</span>
-                  <span class="retire-name">(${retiringPlayerName})</span>
-                </span>
-              ` : ''}
             </div>
             ${allowActions ? `
               <div style="display:flex; gap:8px;">
@@ -1838,19 +1960,17 @@
             <div class="team ${winner1 ? 'winner' : ''} ${isRetP1 ? 'retired-loser' : ''}">
               <div class="avatar" style="background-color: ${p1Color}; width: 28px; height: 28px; font-size: 0.85rem;">${p1Icon}</div>
               <span>${p1Name}</span>
-              ${isRetP1 ? `<span class="retired-tag">Skreč</span>` : ''}
             </div>
             <div class="score-badge" style="${isRet ? 'border-color: rgba(245, 158, 11, 0.5);' : ''}">${m.scoreSetsPlayer1 || 0} : ${m.scoreSetsPlayer2 || 0}</div>
             <div class="team ${winner2 ? 'winner' : ''} ${isRetP2 ? 'retired-loser' : ''}" style="justify-content: flex-end;">
-              ${isRetP2 ? `<span class="retired-tag">Skreč</span>` : ''}
               <span>${p2Name}</span>
               <div class="avatar" style="background-color: ${p2Color}; width: 28px; height: 28px; font-size: 0.85rem;">${p2Icon}</div>
             </div>
           </div>
-          ${setsDetail ? `
+          ${(setsDetail || isRet) ? `
             <div class="match-sets-detail" style="${isRet ? 'background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); color: #fde68a;' : ''}">
-              <span>Sety: <strong>${setsDetail}</strong></span>
-              ${isRet ? `<span style="display: block; font-size: 0.72rem; color: #fbbf24; margin-top: 3px;">⚠️ Zápas nedohrán – hráč ${retiringPlayerName} skrečoval</span>` : ''}
+              ${setsDetail ? `<span>Sety: <strong>${setsDetail}</strong></span>` : ''}
+              ${isRet ? `<span style="display: block; font-size: 0.76rem; color: #fbbf24; ${setsDetail ? 'margin-top: 3px;' : ''}">⚠️ Zápas nedohrán – hráč ${retiringPlayerName} skrečoval</span>` : ''}
             </div>
           ` : ''}
           ${m.notes ? `<div style="font-size:0.78rem; color:var(--text-muted); margin-top:8px; font-style:italic;">"${m.notes}"</div>` : ''}
@@ -1889,6 +2009,300 @@
 
     let selectedStatsPlayerId = null;
     let selectedStatsOpponentId = null;
+
+    function getMatchSetsList(m) {
+      if (m.setsSequence && m.setsSequence.trim()) {
+        return m.setsSequence.split(',').map(s => {
+          const parts = s.trim().split(':').map(Number);
+          if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+            return [parts[0], parts[1]];
+          }
+          return null;
+        }).filter(Boolean);
+      }
+      const res = [];
+      if (m.set1Player1 !== undefined && m.set1Player2 !== undefined && m.set1Player1 !== null && m.set1Player1 !== "") {
+        res.push([parseInt(m.set1Player1) || 0, parseInt(m.set1Player2) || 0]);
+      }
+      if (m.set2Player1 !== undefined && m.set2Player2 !== undefined && m.set2Player1 !== null && m.set2Player1 !== "") {
+        res.push([parseInt(m.set2Player1) || 0, parseInt(m.set2Player2) || 0]);
+      }
+      if (m.set3Player1 !== undefined && m.set3Player2 !== undefined && m.set3Player1 !== null && m.set3Player1 !== "") {
+        res.push([parseInt(m.set3Player1) || 0, parseInt(m.set3Player2) || 0]);
+      }
+      return res;
+    }
+
+    function calculateAdvancedPlayerStats(playerId, matchArray, playersList) {
+      const playerMatches = matchArray.filter(m => 
+        m.player1Id == playerId || m.player2Id == playerId ||
+        m.player3Id == playerId || m.player4Id == playerId
+      );
+
+      // Sort chronological (oldest to newest) for streak calculation
+      const sortedMatches = [...playerMatches].sort((a, b) => {
+        const tA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const tB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return tA - tB;
+      });
+
+      let currentStreakType = null; // 'W' or 'L'
+      let currentStreakCount = 0;
+      let maxWinStreak = 0;
+      let tempWinStreak = 0;
+
+      let threeSetsPlayed = 0;
+      let threeSetsWon = 0;
+      let cleanSweepsCount = 0;
+      let comebackWins = 0;
+      let clutchSetsWon = 0;
+      let blowoutSetsWon = 0;
+      let maxMatchPoints = 0;
+      let maxMatchPointsDetail = null;
+      let retiredCount = 0;
+
+      const oppMap = {};
+
+      const processedMatches = sortedMatches.map(m => {
+        const isP1Team = (m.player1Id == playerId || m.player3Id == playerId);
+        const w1 = m.isRetired ? (m.setsWinner === 1) : ((m.scoreSetsPlayer1 || 0) > (m.scoreSetsPlayer2 || 0));
+        const isWin = isP1Team ? w1 : !w1;
+        const mySets = isP1Team ? (m.scoreSetsPlayer1 || 0) : (m.scoreSetsPlayer2 || 0);
+        const oppSets = isP1Team ? (m.scoreSetsPlayer2 || 0) : (m.scoreSetsPlayer1 || 0);
+        const oppId = isP1Team ? m.player2Id : m.player1Id;
+        const oppObj = playersList.find(p => p.id == oppId);
+        const oppName = oppObj ? oppObj.name : ('Hráč #' + oppId);
+
+        if (m.isRetired) {
+          const didSurrender = (m.retiringPlayer === 1 && isP1Team) ||
+                               (m.retiringPlayer === 2 && !isP1Team) ||
+                               (!m.retiringPlayer && !isWin);
+          if (didSurrender) {
+            retiredCount++;
+          }
+        }
+
+        // Win streak tracking
+        if (isWin) {
+          tempWinStreak++;
+          if (tempWinStreak > maxWinStreak) maxWinStreak = tempWinStreak;
+        } else {
+          tempWinStreak = 0;
+        }
+
+        // Current streak tracking
+        if (!currentStreakType) {
+          currentStreakType = isWin ? 'W' : 'L';
+          currentStreakCount = 1;
+        } else if ((isWin && currentStreakType === 'W') || (!isWin && currentStreakType === 'L')) {
+          currentStreakCount++;
+        } else {
+          currentStreakType = isWin ? 'W' : 'L';
+          currentStreakCount = 1;
+        }
+
+        const rawSets = getMatchSetsList(m);
+        let totalPtsInMatch = 0;
+
+        if (rawSets.length > 0) {
+          if (rawSets.length >= 3 || (mySets + oppSets >= 3)) {
+            threeSetsPlayed++;
+            if (isWin) threeSetsWon++;
+          }
+
+          if (isWin && oppSets === 0 && mySets >= 1) {
+            cleanSweepsCount++;
+          }
+
+          const firstSet = rawSets[0];
+          const myFirstSetScore = isP1Team ? firstSet[0] : firstSet[1];
+          const oppFirstSetScore = isP1Team ? firstSet[1] : firstSet[0];
+          if (myFirstSetScore < oppFirstSetScore && isWin) {
+            comebackWins++;
+          }
+
+          rawSets.forEach(pair => {
+            const myScore = isP1Team ? pair[0] : pair[1];
+            const oppScore = isP1Team ? pair[1] : pair[0];
+            totalPtsInMatch += (pair[0] + pair[1]);
+
+            if (myScore > oppScore) {
+              if ((myScore >= 21 && oppScore >= 20 && (myScore - oppScore <= 2)) || (myScore >= 22)) {
+                clutchSetsWon++;
+              }
+              if (oppScore <= 10 || (myScore - oppScore >= 10)) {
+                blowoutSetsWon++;
+              }
+            }
+          });
+        } else {
+          if (mySets + oppSets >= 3) {
+            threeSetsPlayed++;
+            if (isWin) threeSetsWon++;
+          }
+          if (isWin && oppSets === 0) {
+            cleanSweepsCount++;
+          }
+        }
+
+        if (totalPtsInMatch > maxMatchPoints) {
+          maxMatchPoints = totalPtsInMatch;
+          maxMatchPointsDetail = `${mySets}:${oppSets} (vs ${oppName})`;
+        }
+
+        if (oppId) {
+          if (!oppMap[oppId]) oppMap[oppId] = { id: oppId, name: oppName, matches: 0, wins: 0, losses: 0, obj: oppObj };
+          oppMap[oppId].matches++;
+          if (isWin) oppMap[oppId].wins++; else oppMap[oppId].losses++;
+        }
+
+        return {
+          matchId: m.docId,
+          isWin,
+          mySets,
+          oppSets,
+          oppName,
+          dateStr: m.timestamp ? new Date(m.timestamp).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' }) : '',
+          isRetired: !!m.isRetired
+        };
+      });
+
+      const recentForm = [...processedMatches].reverse().slice(0, 5);
+
+      let mostFrequentRival = null;
+      let bestOpponent = null;
+      let worstOpponent = null;
+
+      const rivalsList = Object.values(oppMap);
+      if (rivalsList.length > 0) {
+        rivalsList.sort((a, b) => b.matches - a.matches);
+        mostFrequentRival = rivalsList[0];
+
+        const qualifiedRivals = rivalsList.filter(r => r.matches >= 2);
+        if (qualifiedRivals.length > 0) {
+          const sortedByRate = [...qualifiedRivals].sort((a, b) => ((b.wins / b.matches) - (a.wins / a.matches)) || (b.matches - a.matches));
+          bestOpponent = sortedByRate[0];
+          worstOpponent = sortedByRate[sortedByRate.length - 1];
+        }
+      }
+
+      function getTier(current, t1, t2, t3, t4) {
+        if (current >= t4) return { tier: 'diamond', label: 'Diamant', next: null, target: t4, progress: 100, unlocked: true };
+        if (current >= t3) return { tier: 'gold', label: 'Zlato', next: t4, target: t3, progress: Math.min(100, Math.round((current / t4) * 100)), unlocked: true };
+        if (current >= t2) return { tier: 'silver', label: 'Stříbro', next: t3, target: t2, progress: Math.min(100, Math.round((current / t3) * 100)), unlocked: true };
+        if (current >= t1) return { tier: 'bronze', label: 'Bronz', next: t2, target: t1, progress: Math.min(100, Math.round((current / t2) * 100)), unlocked: true };
+        return { tier: 'in-progress', label: 'Výzva', next: t1, target: t1, progress: Math.min(100, Math.round((current / t1) * 100)), unlocked: false };
+      }
+
+      const achievements = [
+        {
+          id: 'veteran',
+          icon: '🚀',
+          title: 'Veterán kurtů',
+          desc: `Celkem odehráno ${playerMatches.length} zápasů`,
+          tierInfo: getTier(playerMatches.length, 5, 15, 30, 60),
+          current: playerMatches.length,
+          unit: 'zápasů'
+        },
+        {
+          id: 'streak_king',
+          icon: '🔥',
+          title: 'Nezastavitelná série',
+          desc: `Rekordní série: ${maxWinStreak} výher v řadě`,
+          tierInfo: getTier(maxWinStreak, 2, 4, 7, 12),
+          current: maxWinStreak,
+          unit: 'výher'
+        },
+        {
+          id: 'three_set_king',
+          icon: '👑',
+          title: 'Král třísetových bitev',
+          desc: `${threeSetsWon} vyhraných rozhodujících setů z ${threeSetsPlayed}`,
+          tierInfo: getTier(threeSetsWon, 1, 3, 7, 15),
+          current: threeSetsWon,
+          unit: 'výher'
+        },
+        {
+          id: 'comeback_master',
+          icon: '🔄',
+          title: 'Mistr obratů',
+          desc: `${comebackWins}x otočený zápas ze stavu 0:1 na sety`,
+          tierInfo: getTier(comebackWins, 1, 3, 6, 12),
+          current: comebackWins,
+          unit: 'obratů'
+        },
+        {
+          id: 'crusher',
+          icon: '⚡',
+          title: 'Drtivý válec',
+          desc: `${blowoutSetsWon} setů vyhraných drtivým rozdílem (10+ bodů)`,
+          tierInfo: getTier(blowoutSetsWon, 1, 4, 10, 20),
+          current: blowoutSetsWon,
+          unit: 'setů'
+        },
+        {
+          id: 'clutch_master',
+          icon: '🎯',
+          title: 'Pevné nervy v koncovce',
+          desc: `${clutchSetsWon} vyhraných dramatických setů v prodloužení (22:20+)`,
+          tierInfo: getTier(clutchSetsWon, 1, 3, 7, 15),
+          current: clutchSetsWon,
+          unit: 'setů'
+        },
+        {
+          id: 'clean_sweep',
+          icon: '🧹',
+          title: 'Čisté konto',
+          desc: `${cleanSweepsCount} výher bez jediné ztráty setu (2:0)`,
+          tierInfo: getTier(cleanSweepsCount, 2, 6, 15, 30),
+          current: cleanSweepsCount,
+          unit: 'výher'
+        },
+        {
+          id: 'pan_ztp',
+          icon: '♿',
+          title: 'Pan ZTP',
+          desc: `${retiredCount}x skrečovaný (předčasně vzdanný) zápas`,
+          tierInfo: getTier(retiredCount, 1, 2, 4, 8),
+          current: retiredCount,
+          unit: 'skrečů'
+        },
+        {
+          id: 'iron_man',
+          icon: '🛡️',
+          title: 'Železný hráč',
+          desc: maxMatchPoints > 0 ? `Rekord: ${maxMatchPoints} odehraných bodů v 1 zápase` : 'Maratonské bodové bitvy',
+          tierInfo: getTier(maxMatchPoints, 65, 85, 105, 125),
+          current: maxMatchPoints,
+          unit: 'bodů'
+        }
+      ];
+
+      return {
+        totalMatches: playerMatches.length,
+        currentStreak: {
+          type: currentStreakType || 'W',
+          count: currentStreakCount || 0
+        },
+        maxWinStreak,
+        recentForm,
+        threeSetsStats: {
+          played: threeSetsPlayed,
+          won: threeSetsWon,
+          winRate: threeSetsPlayed > 0 ? (threeSetsWon / threeSetsPlayed) * 100 : 0
+        },
+        cleanSweepsCount,
+        comebackWins,
+        clutchSetsWon,
+        blowoutSetsWon,
+        maxMatchPoints,
+        maxMatchPointsDetail,
+        mostFrequentRival,
+        bestOpponent,
+        worstOpponent,
+        achievements
+      };
+    }
 
     function calculatePlayerStatsJS(playerId, matchArray) {
       let totalMatches = 0;
@@ -2040,6 +2454,7 @@
       const selectedOpponent = availableOpponents.find(p => p.id == selectedStatsOpponentId) || null;
 
       const stat = calculatePlayerStatsJS(activePlayer.id, matches);
+      const adv = calculateAdvancedPlayerStats(activePlayer.id, matches, players);
 
       const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
       const recentMatches = matches.filter(m => (m.timestamp || 0) >= thirtyDaysAgo);
@@ -2049,6 +2464,9 @@
       if (selectedOpponent) {
         h2h = calculateHeadToHeadJS(activePlayer.id, selectedOpponent.id, matches);
       }
+
+      const isWinStreak = adv.currentStreak.type === 'W' && adv.currentStreak.count > 0;
+      const isLossStreak = adv.currentStreak.type === 'L' && adv.currentStreak.count > 0;
 
       let html = `
         <div style="margin-bottom: 16px;">
@@ -2134,7 +2552,158 @@
           `}
         </div>
 
-        <!-- Section 3: Vzájemná bilance (H2H) -->
+        <!-- Section 3: Forma & Série -->
+        <div class="card" style="margin-bottom: 20px;">
+          <div class="card-header" style="margin-bottom: 14px;">
+            <div class="card-title" style="font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+              </svg>
+              Forma & Série
+            </div>
+          </div>
+
+          ${adv.totalMatches === 0 ? `
+            <div style="background: var(--bg-input); border-radius: 12px; padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+              Zatím žádné odehrané zápasy pro vyhodnocení formy.
+            </div>
+          ` : `
+            <!-- Streaks Highlights Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+              <div style="background: ${isWinStreak ? 'linear-gradient(135deg, rgba(32, 223, 104, 0.15), rgba(20, 34, 24, 0.6))' : (isLossStreak ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(30, 20, 20, 0.6))' : 'var(--bg-input)')}; border: 1px solid ${isWinStreak ? 'rgba(32, 223, 104, 0.4)' : (isLossStreak ? 'rgba(239, 68, 68, 0.4)' : 'var(--border-color)')}; border-radius: 14px; padding: 12px;">
+                <div style="font-size: 0.73rem; font-weight: 700; color: ${isWinStreak ? 'var(--accent-green)' : (isLossStreak ? 'var(--danger)' : 'var(--text-muted)')}; text-transform: uppercase;">Aktuální série</div>
+                <div style="font-size: 1.3rem; font-weight: 900; color: var(--text-main); margin: 3px 0; display: flex; align-items: center; gap: 6px;">
+                  <span>${isWinStreak ? '🔥 ' + adv.currentStreak.count + ' výher' : (isLossStreak ? '❄️ ' + adv.currentStreak.count + ' proher' : '—')}</span>
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">v řadě za sebou</div>
+              </div>
+
+              <div style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 14px; padding: 12px;">
+                <div style="font-size: 0.73rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Rekordní série</div>
+                <div style="font-size: 1.3rem; font-weight: 900; color: #fbbf24; margin: 3px 0; display: flex; align-items: center; gap: 6px;">
+                  <span>🏆 ${adv.maxWinStreak} výher</span>
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">nejdelší vítězná šňůra</div>
+              </div>
+            </div>
+
+            <!-- Posledních 5 zápasů (Form Guide) -->
+            <div style="background: var(--bg-input); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">Poslední zápasy (nejnovější vlevo):</span>
+                <span style="font-size: 0.72rem; color: var(--text-muted);">Bilance: ${adv.recentForm.filter(f => f.isWin).length}V - ${adv.recentForm.filter(f => !f.isWin).length}P</span>
+              </div>
+              <div class="recent-form-row">
+                ${adv.recentForm.map(f => `
+                  <div class="form-circle ${f.isWin ? 'win' : 'loss'}" title="${f.isWin ? 'Výhra' : 'Prohra'} ${f.scoreSets} vs ${f.oppName} (${f.dateStr})">
+                    ${f.isWin ? 'V' : 'P'}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- Extra metrics bar (3-set battles, Clean sweeps, Comebacks) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; text-align: center;">
+              <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 8px 6px;">
+                <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700;">3-setové bitvy</div>
+                <div style="font-size: 1.1rem; font-weight: 900; color: var(--accent-green); margin: 2px 0;">${adv.threeSetsStats.won}/${adv.threeSetsStats.played}</div>
+                <div style="font-size: 0.68rem; color: var(--text-muted);">${adv.threeSetsStats.winRate.toFixed(0)} % výher</div>
+              </div>
+
+              <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 8px 6px;">
+                <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700;">Čisté konto 2:0</div>
+                <div style="font-size: 1.1rem; font-weight: 900; color: var(--text-main); margin: 2px 0;">${adv.cleanSweepsCount}x</div>
+                <div style="font-size: 0.68rem; color: var(--text-muted);">bez ztráty setu</div>
+              </div>
+
+              <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 8px 6px;">
+                <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700;">Obraty 0:1 ➔ 2:1</div>
+                <div style="font-size: 1.1rem; font-weight: 900; color: #fbbf24; margin: 2px 0;">${adv.comebackWins}x</div>
+                <div style="font-size: 0.68rem; color: var(--text-muted);">otočený zápas</div>
+              </div>
+            </div>
+          `}
+        </div>
+
+        <!-- Section 4: Zajímavé milníky & Ocenění (Achievements) -->
+        <div class="card" style="margin-bottom: 20px;">
+          <div class="card-header" style="margin-bottom: 14px;">
+            <div class="card-title" style="font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="8" r="7"/>
+                <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+              </svg>
+              Milníky & Ocenění hráče
+            </div>
+            <span style="font-size: 0.75rem; font-weight: 800; color: var(--accent-green); background: rgba(32, 223, 104, 0.12); padding: 3px 8px; border-radius: 10px;">
+              ${adv.achievements.filter(a => a.tierInfo.unlocked).length} / ${adv.achievements.length} Odemčeno
+            </span>
+          </div>
+
+          <div>
+            ${adv.achievements.map(a => {
+              const info = a.tierInfo;
+              const isUnlocked = info.unlocked;
+              return `
+                <div class="achievement-card ${isUnlocked ? 'unlocked' : 'locked'}">
+                  <div class="achievement-icon">${a.icon}</div>
+                  <div style="flex: 1; min-width: 0;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; gap: 6px;">
+                      <span style="font-weight: 800; font-size: 0.9rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${a.title}</span>
+                      <span class="achievement-badge-pill ${info.tier}">${info.label}</span>
+                    </div>
+                    <div style="font-size: 0.77rem; color: var(--text-muted); margin-bottom: 6px; line-height: 1.3;">
+                      ${a.desc}
+                    </div>
+                    <!-- Progress Bar -->
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <div style="flex: 1; height: 5px; background: var(--bg-input); border-radius: 4px; overflow: hidden;">
+                        <div style="width: ${info.progress}%; height: 100%; background: ${isUnlocked ? 'linear-gradient(90deg, #12883e, #20df68)' : 'linear-gradient(90deg, #8ca393, #a3b8aa)'}; border-radius: 4px; transition: width 0.3s ease;"></div>
+                      </div>
+                      <span style="font-size: 0.7rem; font-weight: 700; color: ${isUnlocked ? 'var(--accent-green)' : 'var(--text-muted)'}; min-width: 45px; text-align: right;">
+                        ${a.current} ${info.next ? '/ ' + info.next : '✓ Max'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- Section 5: Rivalita & Soupeři -->
+        ${adv.mostFrequentRival ? `
+          <div class="card" style="margin-bottom: 20px;">
+            <div class="card-header" style="margin-bottom: 12px;">
+              <div class="card-title" style="font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Zajímavosti o soupeřích
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: ${adv.bestOpponent && adv.worstOpponent ? '1fr 1fr' : '1fr'}; gap: 10px;">
+              <!-- Dvorní rival -->
+              <div style="background: var(--bg-input); border-radius: 12px; padding: 12px;">
+                <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">⚔️ Nejčastější rival</div>
+                <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-main); margin-top: 3px;">${adv.mostFrequentRival.name}</div>
+                <div style="font-size: 0.75rem; color: var(--accent-green); margin-top: 2px;">${adv.mostFrequentRival.matches} zápasů (${adv.mostFrequentRival.wins}V - ${adv.mostFrequentRival.losses}P)</div>
+              </div>
+
+              ${adv.bestOpponent ? `
+                <div style="background: rgba(32, 223, 104, 0.08); border: 1px solid rgba(32, 223, 104, 0.2); border-radius: 12px; padding: 12px;">
+                  <div style="font-size: 0.72rem; font-weight: 700; color: var(--accent-green); text-transform: uppercase;">🎯 Oblíbený soupeř</div>
+                  <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-main); margin-top: 3px;">${adv.bestOpponent.name}</div>
+                  <div style="font-size: 0.75rem; color: var(--accent-green); margin-top: 2px;">Úspěšnost ${((adv.bestOpponent.wins / adv.bestOpponent.matches) * 100).toFixed(0)} % (${adv.bestOpponent.wins}/${adv.bestOpponent.matches})</div>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- Section 6: Vzájemná bilance (H2H) -->
         <div class="card" style="margin-bottom: 20px;">
           <div class="card-header" style="margin-bottom: 12px;">
             <div class="card-title" style="font-size: 1rem; display: flex; align-items: center; gap: 8px;">
@@ -2194,7 +2763,7 @@
           `}
         </div>
 
-        <!-- Section 4: Celkový žebříček -->
+        <!-- Section 7: Celkový žebříček -->
         <div class="card">
           <div class="card-title" style="margin-bottom: 12px; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Celkový žebříček skupiny

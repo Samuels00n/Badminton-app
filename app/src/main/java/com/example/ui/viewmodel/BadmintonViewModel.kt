@@ -65,6 +65,72 @@ data class MonthlyStat(
     val winRate: Float
 )
 
+enum class AchievementTier(val label: String, val colorHex: String) {
+    CHALLENGE("Výzva", "#8ca393"),
+    BRONZE("Bronz", "#cd7f32"),
+    SILVER("Stříbro", "#c0c0c0"),
+    GOLD("Zlato", "#ffd700"),
+    DIAMOND("Diamant", "#00d2ff")
+}
+
+data class TierInfo(
+    val tier: AchievementTier,
+    val label: String,
+    val next: Int?,
+    val target: Int,
+    val progress: Int,
+    val unlocked: Boolean
+)
+
+data class AchievementItem(
+    val id: String,
+    val icon: String,
+    val title: String,
+    val desc: String,
+    val tierInfo: TierInfo,
+    val current: Int,
+    val unit: String
+)
+
+data class FormMatchItem(
+    val matchId: Long,
+    val isWin: Boolean,
+    val mySets: Int,
+    val oppSets: Int,
+    val oppName: String,
+    val dateStr: String,
+    val isRetired: Boolean
+)
+
+data class RivalStat(
+    val id: Long,
+    val name: String,
+    val matches: Int,
+    val wins: Int,
+    val losses: Int
+)
+
+data class PlayerAdvancedStats(
+    val totalMatches: Int = 0,
+    val currentStreakType: String = "W",
+    val currentStreakCount: Int = 0,
+    val maxWinStreak: Int = 0,
+    val recentForm: List<FormMatchItem> = emptyList(),
+    val threeSetsPlayed: Int = 0,
+    val threeSetsWon: Int = 0,
+    val threeSetsWinRate: Float = 0f,
+    val cleanSweepsCount: Int = 0,
+    val comebackWins: Int = 0,
+    val clutchSetsWon: Int = 0,
+    val blowoutSetsWon: Int = 0,
+    val maxMatchPoints: Int = 0,
+    val maxMatchPointsDetail: String? = null,
+    val retiredCount: Int = 0,
+    val mostFrequentRival: RivalStat? = null,
+    val bestOpponent: RivalStat? = null,
+    val achievements: List<AchievementItem> = emptyList()
+)
+
 data class LiveMatchState(
     val matchType: String = "SINGLES", // SINGLES / DOUBLES
     val category: String = "Přátelský",
@@ -1119,6 +1185,238 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
             }
             val winRate = if (monthMatches.isNotEmpty()) (wins.toFloat() / monthMatches.size) * 100f else 0f
             MonthlyStat(monthYear, monthMatches.size, winRate)
+        }
+    }
+
+    fun calculateAdvancedStats(
+        player: PlayerEntity,
+        playersList: List<PlayerEntity>,
+        matchOptions: List<MatchEntity>
+    ): PlayerAdvancedStats {
+        val playerMatches = matchOptions.filter {
+            it.player1Id == player.id || it.player2Id == player.id ||
+            it.player3Id == player.id || it.player4Id == player.id
+        }
+
+        if (playerMatches.isEmpty()) {
+            return PlayerAdvancedStats(
+                totalMatches = 0,
+                achievements = listOf(
+                    createAchievement("veteran", "🚀", "Veterán kurtů", "Celkem odehráno 0 zápasů", getTier(0, 5, 15, 30, 60), 0, "zápasů"),
+                    createAchievement("streak_king", "🔥", "Nezastavitelná série", "Rekordní série: 0 výher v řadě", getTier(0, 2, 4, 7, 12), 0, "výher"),
+                    createAchievement("three_set_king", "👑", "Král třísetových bitev", "0 vyhraných rozhodujících setů z 0", getTier(0, 1, 3, 7, 15), 0, "výher"),
+                    createAchievement("comeback_master", "🔄", "Mistr obratů", "0x otočený zápas ze stavu 0:1 na sety", getTier(0, 1, 3, 6, 12), 0, "obratů"),
+                    createAchievement("crusher", "⚡", "Drtivý válec", "0 setů vyhraných drtivým rozdílem (10+ bodů)", getTier(0, 1, 4, 10, 20), 0, "setů"),
+                    createAchievement("clutch_master", "🎯", "Pevné nervy v koncovce", "0 vyhraných dramatických setů v prodloužení (22:20+)", getTier(0, 1, 3, 7, 15), 0, "setů"),
+                    createAchievement("clean_sweep", "🧹", "Čisté konto", "0 výher bez jediné ztráty setu (2:0)", getTier(0, 2, 6, 15, 30), 0, "výher"),
+                    createAchievement("pan_ztp", "♿", "Pan ZTP", "0x skrečovaný (předčasně vzdanný) zápas", getTier(0, 1, 2, 4, 8), 0, "skrečů"),
+                    createAchievement("iron_man", "🛡️", "Železný hráč", "Maratonské bodové bitvy", getTier(0, 65, 85, 105, 125), 0, "bodů")
+                )
+            )
+        }
+
+        val sortedMatches = playerMatches.sortedBy { it.timestamp }
+        val dateFmt = SimpleDateFormat("d. M.", Locale("cs", "CZ"))
+
+        var maxWinStreak = 0
+        var tempWinStreak = 0
+        var currentStreakType: String? = null
+        var currentStreakCount = 0
+
+        var threeSetsPlayed = 0
+        var threeSetsWon = 0
+        var cleanSweepsCount = 0
+        var comebackWins = 0
+        var clutchSetsWon = 0
+        var blowoutSetsWon = 0
+        var maxMatchPoints = 0
+        var maxMatchPointsDetail: String? = null
+        var retiredCount = 0
+
+        val oppMap = mutableMapOf<Long, RivalStat>()
+
+        val processedMatches = sortedMatches.map { m ->
+            val isP1Team = (m.player1Id == player.id || m.player3Id == player.id)
+            val w1 = if (m.isRetired) (m.setsWinner == 1) else (m.scoreSetsPlayer1 > m.scoreSetsPlayer2)
+            val isWin = if (isP1Team) w1 else !w1
+            val mySets = if (isP1Team) m.scoreSetsPlayer1 else m.scoreSetsPlayer2
+            val oppSets = if (isP1Team) m.scoreSetsPlayer2 else m.scoreSetsPlayer1
+            val oppId = if (isP1Team) m.player2Id else m.player1Id
+            val oppObj = playersList.find { it.id == oppId }
+            val oppName = oppObj?.name ?: "Hráč #$oppId"
+
+            if (m.isRetired) {
+                val didSurrender = (m.retiringPlayer == 1 && isP1Team) ||
+                                   (m.retiringPlayer == 2 && !isP1Team) ||
+                                   (m.retiringPlayer == null && !isWin)
+                if (didSurrender) {
+                    retiredCount++
+                }
+            }
+
+            // Win streak tracking
+            if (isWin) {
+                tempWinStreak++
+                if (tempWinStreak > maxWinStreak) maxWinStreak = tempWinStreak
+            } else {
+                tempWinStreak = 0
+            }
+
+            // Current streak tracking
+            if (currentStreakType == null) {
+                currentStreakType = if (isWin) "W" else "L"
+                currentStreakCount = 1
+            } else if ((isWin && currentStreakType == "W") || (!isWin && currentStreakType == "L")) {
+                currentStreakCount++
+            } else {
+                currentStreakType = if (isWin) "W" else "L"
+                currentStreakCount = 1
+            }
+
+            val rawSets = m.getAllSetScores()
+            var totalPtsInMatch = 0
+
+            if (rawSets.isNotEmpty()) {
+                if (rawSets.size >= 3 || (mySets + oppSets >= 3)) {
+                    threeSetsPlayed++
+                    if (isWin) threeSetsWon++
+                }
+
+                if (isWin && oppSets == 0 && mySets >= 1) {
+                    cleanSweepsCount++
+                }
+
+                val firstSet = rawSets[0]
+                val myFirstSetScore = if (isP1Team) firstSet.first else firstSet.second
+                val oppFirstSetScore = if (isP1Team) firstSet.second else firstSet.first
+                if (myFirstSetScore < oppFirstSetScore && isWin) {
+                    comebackWins++
+                }
+
+                rawSets.forEach { pair ->
+                    val myScore = if (isP1Team) pair.first else pair.second
+                    val oppScore = if (isP1Team) pair.second else pair.first
+                    totalPtsInMatch += (pair.first + pair.second)
+
+                    if (myScore > oppScore) {
+                        if ((myScore >= 21 && oppScore >= 20 && (myScore - oppScore <= 2)) || (myScore >= 22)) {
+                            clutchSetsWon++
+                        }
+                        if (oppScore <= 10 || (myScore - oppScore >= 10)) {
+                            blowoutSetsWon++
+                        }
+                    }
+                }
+            } else {
+                if (mySets + oppSets >= 3) {
+                    threeSetsPlayed++
+                    if (isWin) threeSetsWon++
+                }
+                if (isWin && oppSets == 0) {
+                    cleanSweepsCount++
+                }
+            }
+
+            if (totalPtsInMatch > maxMatchPoints) {
+                maxMatchPoints = totalPtsInMatch
+                maxMatchPointsDetail = "$mySets:$oppSets (vs $oppName)"
+            }
+
+            if (oppId != 0L) {
+                val currentRival = oppMap[oppId] ?: RivalStat(oppId, oppName, 0, 0, 0)
+                oppMap[oppId] = currentRival.copy(
+                    matches = currentRival.matches + 1,
+                    wins = currentRival.wins + (if (isWin) 1 else 0),
+                    losses = currentRival.losses + (if (!isWin) 1 else 0)
+                )
+            }
+
+            FormMatchItem(
+                matchId = m.id,
+                isWin = isWin,
+                mySets = mySets,
+                oppSets = oppSets,
+                oppName = oppName,
+                dateStr = if (m.timestamp > 0) dateFmt.format(Date(m.timestamp)) else "",
+                isRetired = m.isRetired
+            )
+        }
+
+        val recentForm = processedMatches.takeLast(5).reversed()
+
+        val rivalsList = oppMap.values.toList()
+        var mostFrequentRival: RivalStat? = null
+        var bestOpponent: RivalStat? = null
+
+        if (rivalsList.isNotEmpty()) {
+            mostFrequentRival = rivalsList.maxByOrNull { it.matches }
+            val qualifiedRivals = rivalsList.filter { it.matches >= 2 }
+            if (qualifiedRivals.isNotEmpty()) {
+                bestOpponent = qualifiedRivals.maxByOrNull { (it.wins.toFloat() / it.matches) * 100f }
+            }
+        }
+
+        val achievements = listOf(
+            createAchievement("veteran", "🚀", "Veterán kurtů", "Celkem odehráno ${playerMatches.size} zápasů", getTier(playerMatches.size, 5, 15, 30, 60), playerMatches.size, "zápasů"),
+            createAchievement("streak_king", "🔥", "Nezastavitelná série", "Rekordní série: $maxWinStreak výher v řadě", getTier(maxWinStreak, 2, 4, 7, 12), maxWinStreak, "výher"),
+            createAchievement("three_set_king", "👑", "Král třísetových bitev", "$threeSetsWon vyhraných rozhodujících setů z $threeSetsPlayed", getTier(threeSetsWon, 1, 3, 7, 15), threeSetsWon, "výher"),
+            createAchievement("comeback_master", "🔄", "Mistr obratů", "${comebackWins}x otočený zápas ze stavu 0:1 na sety", getTier(comebackWins, 1, 3, 6, 12), comebackWins, "obratů"),
+            createAchievement("crusher", "⚡", "Drtivý válec", "$blowoutSetsWon setů vyhraných drtivým rozdílem (10+ bodů)", getTier(blowoutSetsWon, 1, 4, 10, 20), blowoutSetsWon, "setů"),
+            createAchievement("clutch_master", "🎯", "Pevné nervy v koncovce", "$clutchSetsWon vyhraných dramatických setů v prodloužení (22:20+)", getTier(clutchSetsWon, 1, 3, 7, 15), clutchSetsWon, "setů"),
+            createAchievement("clean_sweep", "🧹", "Čisté konto", "$cleanSweepsCount výher bez jediné ztráty setu (2:0)", getTier(cleanSweepsCount, 2, 6, 15, 30), cleanSweepsCount, "výher"),
+            createAchievement("pan_ztp", "♿", "Pan ZTP", "${retiredCount}x skrečovaný (předčasně vzdanný) zápas", getTier(retiredCount, 1, 2, 4, 8), retiredCount, "skrečů"),
+            createAchievement("iron_man", "🛡️", "Železný hráč", if (maxMatchPoints > 0) "Rekord: $maxMatchPoints odehraných bodů v 1 zápase" else "Maratonské bodové bitvy", getTier(maxMatchPoints, 65, 85, 105, 125), maxMatchPoints, "bodů")
+        )
+
+        return PlayerAdvancedStats(
+            totalMatches = playerMatches.size,
+            currentStreakType = currentStreakType ?: "W",
+            currentStreakCount = currentStreakCount,
+            maxWinStreak = maxWinStreak,
+            recentForm = recentForm,
+            threeSetsPlayed = threeSetsPlayed,
+            threeSetsWon = threeSetsWon,
+            threeSetsWinRate = if (threeSetsPlayed > 0) (threeSetsWon.toFloat() / threeSetsPlayed) * 100f else 0f,
+            cleanSweepsCount = cleanSweepsCount,
+            comebackWins = comebackWins,
+            clutchSetsWon = clutchSetsWon,
+            blowoutSetsWon = blowoutSetsWon,
+            maxMatchPoints = maxMatchPoints,
+            maxMatchPointsDetail = maxMatchPointsDetail,
+            retiredCount = retiredCount,
+            mostFrequentRival = mostFrequentRival,
+            bestOpponent = bestOpponent,
+            achievements = achievements
+        )
+    }
+
+    private fun createAchievement(
+        id: String,
+        icon: String,
+        title: String,
+        desc: String,
+        tierInfo: TierInfo,
+        current: Int,
+        unit: String
+    ): AchievementItem {
+        return AchievementItem(
+            id = id,
+            icon = icon,
+            title = title,
+            desc = desc,
+            tierInfo = tierInfo,
+            current = current,
+            unit = unit
+        )
+    }
+
+    private fun getTier(current: Int, t1: Int, t2: Int, t3: Int, t4: Int): TierInfo {
+        return when {
+            current >= t4 -> TierInfo(AchievementTier.DIAMOND, "Diamant", null, t4, 100, true)
+            current >= t3 -> TierInfo(AchievementTier.GOLD, "Zlato", t4, t3, minOf(100, ((current.toFloat() / t4) * 100).toInt()), true)
+            current >= t2 -> TierInfo(AchievementTier.SILVER, "Stříbro", t3, t2, minOf(100, ((current.toFloat() / t3) * 100).toInt()), true)
+            current >= t1 -> TierInfo(AchievementTier.BRONZE, "Bronz", t2, t1, minOf(100, ((current.toFloat() / t2) * 100).toInt()), true)
+            else -> TierInfo(AchievementTier.CHALLENGE, "Výzva", t1, t1, minOf(100, ((current.toFloat() / t1) * 100).toInt()), false)
         }
     }
 }
