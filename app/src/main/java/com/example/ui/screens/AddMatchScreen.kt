@@ -468,11 +468,11 @@ private fun ManualMatchForm(
                     Card(
                         shape = RoundedCornerShape(14.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = if (isRetired) Color(0xFFFFF7ED) else MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                            containerColor = if (isRetired) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
                         ),
                         border = androidx.compose.foundation.BorderStroke(
                             1.dp,
-                            if (isRetired) Color(0xFFF59E0B) else NaturalCardBorder
+                            if (isRetired) CoralRedLoss.copy(alpha = 0.5f) else NaturalCardBorder
                         ),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -487,7 +487,7 @@ private fun ManualMatchForm(
                                     checked = isRetired,
                                     onCheckedChange = { isRetired = it },
                                     colors = CheckboxDefaults.colors(
-                                        checkedColor = Color(0xFFD97706)
+                                        checkedColor = CoralRedLoss
                                     )
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
@@ -496,7 +496,7 @@ private fun ManualMatchForm(
                                         text = "Zápas byl skrečován (předčasně ukončen)",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.sp,
-                                        color = if (isRetired) Color(0xFF9A3412) else MaterialTheme.colorScheme.onSurface
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = "Označte, pokud hráč ze zdravotních či jiných důvodů vzdal",
@@ -512,7 +512,7 @@ private fun ManualMatchForm(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(1.dp)
-                                        .background(Color(0xFFF59E0B).copy(alpha = 0.3f))
+                                        .background(NaturalCardBorder.copy(alpha = 0.6f))
                                 )
                                 Spacer(modifier = Modifier.height(10.dp))
 
@@ -520,7 +520,7 @@ private fun ManualMatchForm(
                                     text = "Kdo zápas skrečoval (vzdal)?",
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 12.sp,
-                                    color = Color(0xFF9A3412),
+                                    color = CoralRedLoss,
                                     modifier = Modifier.padding(start = 4.dp)
                                 )
                                 Spacer(modifier = Modifier.height(6.dp))
@@ -537,21 +537,22 @@ private fun ManualMatchForm(
                                         modifier = Modifier
                                             .weight(1f)
                                             .clip(RoundedCornerShape(10.dp))
-                                            .background(if (retiringPlayer == 1) Color(0xFFFFEDD5) else Color.Transparent)
-                                            .border(1.dp, if (retiringPlayer == 1) Color(0xFFF59E0B) else Color.Transparent, RoundedCornerShape(10.dp))
+                                            .background(if (retiringPlayer == 1) CoralRedLoss.copy(alpha = 0.15f) else Color.Transparent)
+                                            .border(1.dp, if (retiringPlayer == 1) CoralRedLoss else NaturalCardBorder, RoundedCornerShape(10.dp))
                                             .clickable { retiringPlayer = 1 }
                                             .padding(horizontal = 8.dp, vertical = 6.dp)
                                     ) {
                                         RadioButton(
                                             selected = (retiringPlayer == 1),
                                             onClick = { retiringPlayer = 1 },
-                                            colors = RadioButtonDefaults.colors(selectedColor = Color(0xFFD97706))
+                                            colors = RadioButtonDefaults.colors(selectedColor = CoralRedLoss)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(
                                             text = p1Name,
                                             fontWeight = if (retiringPlayer == 1) FontWeight.Bold else FontWeight.Normal,
-                                            fontSize = 12.sp
+                                            fontSize = 12.sp,
+                                            color = MaterialTheme.colorScheme.onSurface
                                         )
                                     }
 
@@ -560,21 +561,22 @@ private fun ManualMatchForm(
                                         modifier = Modifier
                                             .weight(1f)
                                             .clip(RoundedCornerShape(10.dp))
-                                            .background(if (retiringPlayer == 2) Color(0xFFFFEDD5) else Color.Transparent)
-                                            .border(1.dp, if (retiringPlayer == 2) Color(0xFFF59E0B) else Color.Transparent, RoundedCornerShape(10.dp))
+                                            .background(if (retiringPlayer == 2) CoralRedLoss.copy(alpha = 0.15f) else Color.Transparent)
+                                            .border(1.dp, if (retiringPlayer == 2) CoralRedLoss else NaturalCardBorder, RoundedCornerShape(10.dp))
                                             .clickable { retiringPlayer = 2 }
                                             .padding(horizontal = 8.dp, vertical = 6.dp)
                                     ) {
                                         RadioButton(
                                             selected = (retiringPlayer == 2),
                                             onClick = { retiringPlayer = 2 },
-                                            colors = RadioButtonDefaults.colors(selectedColor = Color(0xFFD97706))
+                                            colors = RadioButtonDefaults.colors(selectedColor = CoralRedLoss)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(
                                             text = p2Name,
                                             fontWeight = if (retiringPlayer == 2) FontWeight.Bold else FontWeight.Normal,
-                                            fontSize = 12.sp
+                                            fontSize = 12.sp,
+                                            color = MaterialTheme.colorScheme.onSurface
                                         )
                                     }
                                 }

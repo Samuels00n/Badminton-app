@@ -68,8 +68,6 @@ fun MatchCard(
     val isTeam2Winner = (match.setsWinner == 2)
 
     val isRetired = match.isRetired
-    val isP1Retired = isRetired && match.retiringPlayer == 1
-    val isP2Retired = isRetired && match.retiringPlayer == 2
     val retiringPlayerName = if (match.retiringPlayer == 1) nameTeam1 else nameTeam2
 
     val dateFormat = SimpleDateFormat("d. MMMM yyyy", Locale("cs", "CZ"))
@@ -78,31 +76,22 @@ fun MatchCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .border(
-                1.dp,
-                if (isRetired) Color(0xFFF59E0B).copy(alpha = 0.5f) else NaturalCardBorder,
-                RoundedCornerShape(20.dp)
-            )
+            .border(1.dp, NaturalCardBorder, RoundedCornerShape(20.dp))
             .testTag("match_card_${match.id}"),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isRetired) Color(0xFFFFFDF5) else MaterialTheme.colorScheme.surface
-        ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Header Row: Category chip, match type, retirement badge, date, action buttons
+            // Header Row: Category chip, match type, date, action buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f, fill = false)
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
@@ -124,32 +113,6 @@ fun MatchCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
-
-                    if (isRetired) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(Color(0xFFFEF3C7))
-                                .border(1.dp, Color(0xFFF59E0B).copy(alpha = 0.6f), RoundedCornerShape(20.dp))
-                                .padding(horizontal = 8.dp, vertical = 3.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = "Skreč",
-                                tint = Color(0xFFD97706),
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "Skreč",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color(0xFFB45309)
-                            )
-                        }
-                    }
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -202,10 +165,7 @@ fun MatchCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(
-                        if (isRetired) Color(0xFFFFFBEB).copy(alpha = 0.6f)
-                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                    )
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
                     .padding(12.dp)
             ) {
                 Column(
@@ -242,18 +202,14 @@ fun MatchCard(
 
                             Spacer(modifier = Modifier.width(10.dp))
 
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f, fill = false)
-                            ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
                                     text = nameTeam1,
                                     fontWeight = if (isTeam1Winner) FontWeight.Bold else FontWeight.Medium,
                                     fontSize = 15.sp,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
-                                    color = if (isP1Retired) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                           else MaterialTheme.colorScheme.onSurface
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 if (isTeam1Winner) {
                                     Spacer(modifier = Modifier.width(6.dp))
@@ -263,22 +219,6 @@ fun MatchCard(
                                         tint = Color(0xFFD4AF37),
                                         modifier = Modifier.size(16.dp)
                                     )
-                                }
-                                if (isP1Retired) {
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(4.dp))
-                                            .background(Color(0xFFFEE2E2))
-                                            .padding(horizontal = 5.dp, vertical = 2.dp)
-                                    ) {
-                                        Text(
-                                            text = "Skreč",
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFFDC2626)
-                                        )
-                                    }
                                 }
                             }
                         }
@@ -338,18 +278,14 @@ fun MatchCard(
 
                             Spacer(modifier = Modifier.width(10.dp))
 
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f, fill = false)
-                            ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
                                     text = nameTeam2,
                                     fontWeight = if (isTeam2Winner) FontWeight.Bold else FontWeight.Medium,
                                     fontSize = 15.sp,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
-                                    color = if (isP2Retired) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                           else MaterialTheme.colorScheme.onSurface
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 if (isTeam2Winner) {
                                     Spacer(modifier = Modifier.width(6.dp))
@@ -359,22 +295,6 @@ fun MatchCard(
                                         tint = Color(0xFFD4AF37),
                                         modifier = Modifier.size(16.dp)
                                     )
-                                }
-                                if (isP2Retired) {
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(4.dp))
-                                            .background(Color(0xFFFEE2E2))
-                                            .padding(horizontal = 5.dp, vertical = 2.dp)
-                                    ) {
-                                        Text(
-                                            text = "Skreč",
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFFDC2626)
-                                        )
-                                    }
                                 }
                             }
                         }
@@ -433,27 +353,32 @@ fun MatchCard(
             }
 
             if (isRetired) {
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFFEF3C7).copy(alpha = 0.6f))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(CoralRedLoss.copy(alpha = 0.15f))
+                        .border(
+                            1.dp,
+                            CoralRedLoss.copy(alpha = 0.35f),
+                            RoundedCornerShape(10.dp)
+                        )
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Warning,
-                        contentDescription = null,
-                        tint = Color(0xFFD97706),
-                        modifier = Modifier.size(13.dp)
+                        contentDescription = "Skreč",
+                        tint = CoralRedLoss,
+                        modifier = Modifier.size(15.dp)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Zápas nedohrán – hráč $retiringPlayerName skrečoval",
-                        fontSize = 11.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color(0xFF92400E)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }

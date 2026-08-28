@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.SportsTennis
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -593,6 +594,31 @@ fun StatsScreen(
                                                     fontWeight = FontWeight.Bold,
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                                                 )
+
+                                                if (match.isRetired) {
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        modifier = Modifier
+                                                            .clip(RoundedCornerShape(6.dp))
+                                                            .background(CoralRedLoss.copy(alpha = 0.15f))
+                                                            .border(1.dp, CoralRedLoss.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
+                                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Warning,
+                                                            contentDescription = "Skreč",
+                                                            tint = CoralRedLoss,
+                                                            modifier = Modifier.size(11.dp)
+                                                        )
+                                                        Spacer(modifier = Modifier.width(3.dp))
+                                                        Text(
+                                                            text = "Skreč",
+                                                            fontSize = 10.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = CoralRedLoss
+                                                        )
+                                                    }
+                                                }
                                             }
 
                                             Spacer(modifier = Modifier.height(8.dp))
@@ -635,21 +661,46 @@ fun StatsScreen(
                                             Spacer(modifier = Modifier.height(6.dp))
 
                                             // Set scores breakdown chips
-                                            Row(
-                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                val s1Str = if (isP1Team1) "${match.set1Player1}:${match.set1Player2}" else "${match.set1Player2}:${match.set1Player1}"
-                                                SetScoreChip(label = "1. set", score = s1Str)
-
-                                                if (match.set2Player1 != null && match.set2Player2 != null) {
-                                                    val s2Str = if (isP1Team1) "${match.set2Player1}:${match.set2Player2}" else "${match.set2Player2}:${match.set2Player1}"
-                                                    SetScoreChip(label = "2. set", score = s2Str)
+                                            val allSets = match.getAllSetScores()
+                                            if (allSets.isNotEmpty()) {
+                                                Row(
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    allSets.forEachIndexed { index, pair ->
+                                                        val sStr = if (isP1Team1) "${pair.first}:${pair.second}" else "${pair.second}:${pair.first}"
+                                                        SetScoreChip(label = "${index + 1}. set", score = sStr)
+                                                    }
                                                 }
+                                            }
 
-                                                if (match.set3Player1 != null && match.set3Player2 != null) {
-                                                    val s3Str = if (isP1Team1) "${match.set3Player1}:${match.set3Player2}" else "${match.set3Player2}:${match.set3Player1}"
-                                                    SetScoreChip(label = "3. set", score = s3Str)
+                                            if (match.isRetired) {
+                                                val retName = if (match.retiringPlayer == 1) {
+                                                    if (isP1Team1) activePlayer.name else (selectedOpponent?.name ?: "Soupeř")
+                                                } else {
+                                                    if (isP1Team1) (selectedOpponent?.name ?: "Soupeř") else activePlayer.name
+                                                }
+                                                Spacer(modifier = Modifier.height(6.dp))
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    modifier = Modifier
+                                                        .clip(RoundedCornerShape(6.dp))
+                                                        .background(CoralRedLoss.copy(alpha = 0.1f))
+                                                        .padding(horizontal = 7.dp, vertical = 3.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Warning,
+                                                        contentDescription = null,
+                                                        tint = CoralRedLoss,
+                                                        modifier = Modifier.size(12.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(4.dp))
+                                                    Text(
+                                                        text = "Zápas skrečoval hráč: $retName",
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.Medium,
+                                                        color = CoralRedLoss
+                                                    )
                                                 }
                                             }
 
