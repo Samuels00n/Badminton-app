@@ -10,7 +10,7 @@ import com.example.data.entity.PlayerEntity
 
 @Database(
     entities = [PlayerEntity::class, MatchEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class BadmintonDatabase : RoomDatabase() {
