@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,10 +22,13 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -33,6 +38,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -57,6 +64,8 @@ import com.example.ui.components.PlayerAvatar
 import com.example.ui.components.ScoreBoard
 import com.example.ui.theme.CoralRedLoss
 import com.example.ui.theme.ForestGreenPrimary
+import com.example.ui.theme.ForestGreenContainer
+import com.example.ui.theme.NaturalCardBorder
 import com.example.ui.viewmodel.LiveMatchState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -327,6 +336,8 @@ private fun ManualMatchForm(
     var selectedP2 by remember { mutableStateOf<PlayerEntity?>(players.getOrNull(1)) }
 
     var setsList by remember { mutableStateOf(listOf(Pair("21", "18"), Pair("21", "15"))) }
+    var isRetired by remember { mutableStateOf(false) }
+    var retiringPlayer by remember { mutableIntStateOf(1) } // 1 = Player 1 retired (P2 wins), 2 = Player 2 retired (P1 wins)
 
     var notes by remember { mutableStateOf("") }
 
@@ -453,6 +464,126 @@ private fun ManualMatchForm(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // Retirement Section
+                    Card(
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isRetired) Color(0xFFFFF7ED) else MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if (isRetired) Color(0xFFF59E0B) else NaturalCardBorder
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { isRetired = !isRetired }
+                            ) {
+                                Checkbox(
+                                    checked = isRetired,
+                                    onCheckedChange = { isRetired = it },
+                                    colors = CheckboxDefaults.colors(
+                                        checkedColor = Color(0xFFD97706)
+                                    )
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Column {
+                                    Text(
+                                        text = "Zápas byl skrečován (předčasně ukončen)",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = if (isRetired) Color(0xFF9A3412) else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "Označte, pokud hráč ze zdravotních či jiných důvodů vzdal",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                }
+                            }
+
+                            if (isRetired) {
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(1.dp)
+                                        .background(Color(0xFFF59E0B).copy(alpha = 0.3f))
+                                )
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                Text(
+                                    text = "Kdo zápas skrečoval (vzdal)?",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF9A3412),
+                                    modifier = Modifier.padding(start = 4.dp)
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    val p1Name = selectedP1?.name ?: "Hráč 1"
+                                    val p2Name = selectedP2?.name ?: "Hráč 2"
+
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(if (retiringPlayer == 1) Color(0xFFFFEDD5) else Color.Transparent)
+                                            .border(1.dp, if (retiringPlayer == 1) Color(0xFFF59E0B) else Color.Transparent, RoundedCornerShape(10.dp))
+                                            .clickable { retiringPlayer = 1 }
+                                            .padding(horizontal = 8.dp, vertical = 6.dp)
+                                    ) {
+                                        RadioButton(
+                                            selected = (retiringPlayer == 1),
+                                            onClick = { retiringPlayer = 1 },
+                                            colors = RadioButtonDefaults.colors(selectedColor = Color(0xFFD97706))
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = p1Name,
+                                            fontWeight = if (retiringPlayer == 1) FontWeight.Bold else FontWeight.Normal,
+                                            fontSize = 12.sp
+                                        )
+                                    }
+
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(if (retiringPlayer == 2) Color(0xFFFFEDD5) else Color.Transparent)
+                                            .border(1.dp, if (retiringPlayer == 2) Color(0xFFF59E0B) else Color.Transparent, RoundedCornerShape(10.dp))
+                                            .clickable { retiringPlayer = 2 }
+                                            .padding(horizontal = 8.dp, vertical = 6.dp)
+                                    ) {
+                                        RadioButton(
+                                            selected = (retiringPlayer == 2),
+                                            onClick = { retiringPlayer = 2 },
+                                            colors = RadioButtonDefaults.colors(selectedColor = Color(0xFFD97706))
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = p2Name,
+                                            fontWeight = if (retiringPlayer == 2) FontWeight.Bold else FontWeight.Normal,
+                                            fontSize = 12.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     OutlinedTextField(
                         value = notes,
                         onValueChange = { notes = it },
@@ -481,7 +612,11 @@ private fun ManualMatchForm(
                                 if (s1 > s2) setsP1++ else if (s2 > s1) setsP2++
                             }
 
-                            val winner = if (setsP1 >= setsP2) 1 else 2
+                            val winner = if (isRetired) {
+                                if (retiringPlayer == 1) 2 else 1
+                            } else {
+                                if (setsP1 >= setsP2) 1 else 2
+                            }
                             val setsSequence = finalSets.joinToString(",") { "${it.first}:${it.second}" }
 
                             val match = MatchEntity(
@@ -501,6 +636,8 @@ private fun ManualMatchForm(
                                 courtType = courtType,
                                 notes = notes,
                                 setsSequence = setsSequence,
+                                isRetired = isRetired,
+                                retiringPlayer = if (isRetired) retiringPlayer else null,
                                 timestamp = System.currentTimeMillis()
                             )
 

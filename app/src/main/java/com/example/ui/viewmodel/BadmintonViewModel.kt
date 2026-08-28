@@ -232,6 +232,8 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                             val durationMinutes = doc.getLong("durationMinutes")?.toInt() ?: 30
                             val notes = doc.getString("notes") ?: ""
                             val setsSequence = doc.getString("setsSequence") ?: ""
+                            val isRetired = doc.getBoolean("isRetired") ?: false
+                            val retiringPlayer = doc.getLong("retiringPlayer")?.toInt()
                             val timestamp = doc.getLong("timestamp") ?: System.currentTimeMillis()
 
                             repository.insertMatch(
@@ -256,6 +258,8 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                                     durationMinutes = durationMinutes,
                                     notes = notes,
                                     setsSequence = setsSequence,
+                                    isRetired = isRetired,
+                                    retiringPlayer = retiringPlayer,
                                     timestamp = timestamp
                                 )
                             )
@@ -442,6 +446,8 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                             "durationMinutes" to m.durationMinutes,
                             "notes" to m.notes,
                             "setsSequence" to m.setsSequence,
+                            "isRetired" to m.isRetired,
+                            "retiringPlayer" to m.retiringPlayer,
                             "timestamp" to m.timestamp
                         )
                         db.collection("groups").document(roomId).collection("matches")
@@ -513,6 +519,8 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                 mObj.put("durationMinutes", m.durationMinutes)
                 mObj.put("notes", m.notes)
                 mObj.put("setsSequence", m.setsSequence)
+                mObj.put("isRetired", m.isRetired)
+                mObj.put("retiringPlayer", m.retiringPlayer ?: JSONObject.NULL)
                 mObj.put("timestamp", m.timestamp)
                 matchesArray.put(mObj)
             }
@@ -556,6 +564,7 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                     val s2p2 = if (mObj.isNull("set2Player2")) null else mObj.optInt("set2Player2")
                     val s3p1 = if (mObj.isNull("set3Player1")) null else mObj.optInt("set3Player1")
                     val s3p2 = if (mObj.isNull("set3Player2")) null else mObj.optInt("set3Player2")
+                    val retPlayer = if (mObj.isNull("retiringPlayer")) null else mObj.optInt("retiringPlayer")
                     val m = MatchEntity(
                         id = mObj.optLong("id", 0L),
                         matchType = mObj.optString("matchType", "SINGLES"),
@@ -577,6 +586,8 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                         durationMinutes = mObj.optInt("durationMinutes", 30),
                         notes = mObj.optString("notes", ""),
                         setsSequence = mObj.optString("setsSequence", ""),
+                        isRetired = mObj.optBoolean("isRetired", false),
+                        retiringPlayer = retPlayer,
                         timestamp = mObj.optLong("timestamp", System.currentTimeMillis())
                     )
                     repository.insertMatch(m)
@@ -710,6 +721,8 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                         "durationMinutes" to m.durationMinutes,
                         "notes" to m.notes,
                         "setsSequence" to m.setsSequence,
+                        "isRetired" to m.isRetired,
+                        "retiringPlayer" to m.retiringPlayer,
                         "timestamp" to m.timestamp
                     )
                     FirebaseFirestore.getInstance()
@@ -751,6 +764,8 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                         "durationMinutes" to m.durationMinutes,
                         "notes" to m.notes,
                         "setsSequence" to m.setsSequence,
+                        "isRetired" to m.isRetired,
+                        "retiringPlayer" to m.retiringPlayer,
                         "timestamp" to m.timestamp
                     )
                     FirebaseFirestore.getInstance()
@@ -998,16 +1013,20 @@ class BadmintonViewModel(application: Application) : AndroidViewModel(applicatio
                 streakList.add(false)
             }
 
+            val allSets = m.getAllSetScores()
+            val mPtsP1 = allSets.sumOf { it.first }
+            val mPtsP2 = allSets.sumOf { it.second }
+
             if (isP1Team) {
                 setsWon += m.scoreSetsPlayer1
                 setsLost += m.scoreSetsPlayer2
-                ptsScored += m.set1Player1 + (m.set2Player1 ?: 0) + (m.set3Player1 ?: 0)
-                ptsConceded += m.set1Player2 + (m.set2Player2 ?: 0) + (m.set3Player2 ?: 0)
+                ptsScored += mPtsP1
+                ptsConceded += mPtsP2
             } else {
                 setsWon += m.scoreSetsPlayer2
                 setsLost += m.scoreSetsPlayer1
-                ptsScored += m.set1Player2 + (m.set2Player2 ?: 0) + (m.set3Player2 ?: 0)
-                ptsConceded += m.set1Player1 + (m.set2Player1 ?: 0) + (m.set3Player1 ?: 0)
+                ptsScored += mPtsP2
+                ptsConceded += mPtsP1
             }
         }
 

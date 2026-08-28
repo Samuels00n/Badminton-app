@@ -26,6 +26,8 @@ data class MatchEntity(
     val durationMinutes: Int = 30,
     val notes: String = "",
     val setsSequence: String = "", // e.g. "21:18,21:15,19:21,21:14" for unlimited sets
+    val isRetired: Boolean = false,
+    val retiringPlayer: Int? = null, // 1 = Player 1 retired (P2 wins), 2 = Player 2 retired (P1 wins)
     val timestamp: Long = System.currentTimeMillis()
 ) {
     fun getAllSetScores(): List<Pair<Int, Int>> {
